@@ -229,38 +229,53 @@ export class DemoProjectRepository implements IProjectRepository {
     }
   }
 
-  private saveStorage(projects: Project[]): void {
+  private cleanupLegacyStorage(): void {
     if (typeof window === 'undefined') return;
     try {
-      const currentKey = this.getStorageKey();
-      window.localStorage.setItem(currentKey, JSON.stringify(projects));
+      const keysToRemove = [
+        STORAGE_KEY_V7,
+        STORAGE_KEY_V6,
+        STORAGE_KEY_V5,
+        STORAGE_KEY_V4,
+        STORAGE_KEY_V3,
+        STORAGE_KEY_V2,
+        STORAGE_KEY_V1,
+        COMPANIES_KEY_V3,
+        COMPANIES_KEY_V2,
+        COMPANIES_KEY_V1,
+      ];
+      for (const k of keysToRemove) {
+        window.localStorage.removeItem(k);
+      }
+    } catch {}
+  }
 
-      // Also propagate updates to any specific user store containing the same project ID
-      for (let i = 0; i < window.localStorage.length; i++) {
-        const k = window.localStorage.key(i);
-        if (k && k.startsWith('sianpick_projects_') && k !== currentKey) {
-          const raw = window.localStorage.getItem(k);
-          if (raw) {
-            try {
-              const list: Project[] = JSON.parse(raw);
-              let hasMatch = false;
-              const updatedList = list.map((lp) => {
-                const match = projects.find((p) => p.id === lp.id);
-                if (match) {
-                  hasMatch = true;
-                  return match;
-                }
-                return lp;
-              });
-              if (hasMatch) {
-                window.localStorage.setItem(k, JSON.stringify(updatedList));
-              }
-            } catch {}
+  private saveStorage(projects: Project[]): void {
+    if (typeof window === 'undefined') return;
+    this.cleanupLegacyStorage();
+    const currentKey = this.getStorageKey();
+
+    try {
+      window.localStorage.setItem(currentKey, JSON.stringify(projects));
+    } catch (e) {
+      console.warn('Storage save quota warning, attempting emergency cleanup:', e);
+      try {
+        // Clean up legacy and temporary stores if storage is constrained
+        for (let i = window.localStorage.length - 1; i >= 0; i--) {
+          const k = window.localStorage.key(i);
+          if (
+            k &&
+            k !== currentKey &&
+            (k.startsWith('sianpick_projects_store_') || k.startsWith('sianpick_companies_store_'))
+          ) {
+            window.localStorage.removeItem(k);
           }
         }
+        window.localStorage.setItem(currentKey, JSON.stringify(projects));
+      } catch (err) {
+        console.error('Critical: Failed to save to localStorage due to storage limit', err);
+        throw new Error('브라우저 저장 공간이 초과되어 시안을 저장하지 못했습니다.');
       }
-    } catch (e) {
-      console.error('Failed to save to localStorage', e);
     }
   }
 
@@ -631,22 +646,31 @@ export class DemoProjectRepository implements IProjectRepository {
     const project = projects.find((p) => p.id === projectId);
     if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
 
+    // Ensure valid target itemId
+    let targetItemId = data.itemId;
+    if (!targetItemId && project.designItems && project.designItems.length > 0) {
+      targetItemId = project.designItems[0].id;
+    }
+
     const newConceptId = `concept-${Date.now()}`;
+    const nextOrder = data.displayOrder ?? ((project.concepts?.length || 0) + 1);
+    const cleanTitle = data.title?.trim() || `시안 0${nextOrder}`;
+
     const newConcept: Concept = {
       id: newConceptId,
       projectId,
-      itemId: data.itemId,
-      title: data.title,
-      description: data.description,
-      designConcept: data.designConcept,
-      colorFontDescription: data.colorFontDescription,
-      usageRecommendation: data.usageRecommendation,
+      itemId: targetItemId,
+      title: cleanTitle,
+      description: data.description?.trim(),
+      designConcept: data.designConcept?.trim(),
+      colorFontDescription: data.colorFontDescription?.trim(),
+      usageRecommendation: data.usageRecommendation?.trim(),
       thumbnailUrl: data.thumbnailUrl,
-      displayOrder: data.displayOrder ?? ((project.concepts?.length || 0) + 1),
+      displayOrder: nextOrder,
       isPublic: data.isPublic ?? true,
       linkEnabled: data.linkEnabled ?? false,
-      linkTitle: data.linkTitle,
-      linkUrl: data.linkUrl,
+      linkTitle: data.linkTitle?.trim(),
+      linkUrl: data.linkUrl?.trim(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       versions: [

@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { compressImage } from '@/lib/utils/image-compression';
 
 interface ProjectEstimateEditorProps {
   projectId: string;
@@ -142,7 +143,7 @@ export function ProjectEstimateEditor({
     loadStudio();
   }, [initialEstimate]);
 
-  const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -151,14 +152,15 @@ export function ProjectEstimateEditor({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setSenderLogoUrl(event.target.result as string);
-        toast.success('견적서 하단 로고가 첨부되었습니다.');
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImage(file, 800, 800, 0.85);
+      setSenderLogoUrl(compressed);
+      toast.success('견적서 하단 로고가 첨부되었습니다.');
+    } catch {
+      toast.error('로고 이미지 처리 중 오류가 발생했습니다.');
+    } finally {
+      if (e.target) e.target.value = '';
+    }
   };
 
   // Recipient

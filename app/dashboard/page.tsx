@@ -10,6 +10,7 @@ import { ConfirmationModal } from '@/components/shared/confirmation-modal';
 import { Project, Company, StudioProfile } from '@/types';
 import { getProjectRepository } from '@/lib/repositories';
 import { STUDIO_ATELIER_LOGO_SVG } from '@/lib/demo/sample-data';
+import { compressImage } from '@/lib/utils/image-compression';
 import {
   Plus,
   Search,
@@ -165,21 +166,22 @@ export default function DashboardPage() {
   };
 
   // Logo file upload
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
       toast.error('이미지 파일만 업로드할 수 있습니다.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setStudioLogoUrl(event.target.result as string);
-        toast.success('로고 이미지가 등록되었습니다. 저장을 눌러 완료하세요.');
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImage(file, 800, 800, 0.85);
+      setStudioLogoUrl(compressed);
+      toast.success('로고 이미지가 등록되었습니다. 저장을 눌러 완료하세요.');
+    } catch {
+      toast.error('로고 이미지 처리 중 오류가 발생했습니다.');
+    } finally {
+      if (e.target) e.target.value = '';
+    }
   };
 
   // Save company (Create or update)

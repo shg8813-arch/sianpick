@@ -11,6 +11,7 @@ import { VersionComparisonModal } from '@/components/shared/version-comparison-m
 import { ConfirmationModal } from '@/components/shared/confirmation-modal';
 import { Project, Concept, PinComment, RevisionStatus, ProjectStatus, DesignItem } from '@/types';
 import { getProjectRepository } from '@/lib/repositories';
+import { compressImage } from '@/lib/utils/image-compression';
 import {
   formatDateKR,
   formatDateTimeKR,
@@ -1253,6 +1254,52 @@ export default function ProjectDetailPage() {
                   );
                 })
               )}
+
+              {/* Fallback for any unassigned concepts */}
+              {(() => {
+                const unassignedConcepts = concepts.filter(
+                  (c) => !c.itemId || !designItems.some((it) => it.id === c.itemId)
+                );
+                if (unassignedConcepts.length === 0) return null;
+
+                return (
+                  <div className="bg-white rounded-3xl p-6 sm:p-8 border border-amber-200/90 shadow-sm space-y-6">
+                    <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                          미분류 시안
+                        </span>
+                        <h3 className="text-lg font-bold text-zinc-900">
+                          지정된 디자인 항목이 없는 시안 ({unassignedConcepts.length}개)
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {unassignedConcepts.map((concept) => (
+                        <ConceptCard
+                          key={concept.id}
+                          concept={concept}
+                          commentCount={comments.filter((c) => c.conceptId === concept.id).length}
+                          selection={selections.find((s) => s.conceptId === concept.id)}
+                          isAdmin
+                          onOpenViewer={() => {
+                            const idx = concepts.findIndex((x) => x.id === concept.id);
+                            setViewerConceptIdx(idx >= 0 ? idx : 0);
+                            setIsViewerOpen(true);
+                          }}
+                          onOpenComparison={() => setComparisonConcept(concept)}
+                          onEdit={() => {
+                            setEditingConcept(concept);
+                            setIsConceptModalOpen(true);
+                          }}
+                          onDelete={() => setDeletingConceptId(concept.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -1701,17 +1748,18 @@ export default function ProjectDetailPage() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (ev) => {
-                        if (ev.target?.result) {
-                          setNewVersionImageUrl(ev.target.result as string);
-                          toast.success('시안 이미지를 성공적으로 불러왔습니다.');
-                        }
-                      };
-                      reader.readAsDataURL(file);
+                      try {
+                        const compressed = await compressImage(file, 1600, 1600, 0.82);
+                        setNewVersionImageUrl(compressed);
+                        toast.success('시안 이미지를 성공적으로 불러왔습니다.');
+                      } catch {
+                        toast.error('이미지 처리 중 오류가 발생했습니다.');
+                      } finally {
+                        if (e.target) e.target.value = '';
+                      }
                     }}
                     className="w-full text-xs text-zinc-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-800 hover:file:bg-zinc-200 cursor-pointer"
                   />

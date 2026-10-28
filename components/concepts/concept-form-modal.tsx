@@ -5,6 +5,7 @@ import { Modal } from '@/components/shared/modal';
 import { Concept, DesignItem } from '@/types';
 import { UploadCloud, Image as ImageIcon, Sparkles, Loader2, Tag, Link as LinkIcon } from 'lucide-react';
 import { generateBrandMockupSvg } from '@/lib/utils/svg-generator';
+import { compressImage } from '@/lib/utils/image-compression';
 import { toast } from 'sonner';
 
 interface ConceptFormModalProps {
@@ -54,6 +55,7 @@ export function ConceptFormModal({
   const [linkTitle, setLinkTitle] = useState(initialData?.linkTitle || '');
   const [linkUrl, setLinkUrl] = useState(initialData?.linkUrl || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -98,7 +100,7 @@ export function ConceptFormModal({
     toast.success('감각적인 디자인 샘플 프리셋 이미지가 생성되었습니다.');
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -107,14 +109,17 @@ export function ConceptFormModal({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setThumbnailUrl(event.target.result as string);
-        toast.success('이미지가 성공적으로 불러와졌습니다.');
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      setIsCompressing(true);
+      const compressed = await compressImage(file, 1600, 1600, 0.82);
+      setThumbnailUrl(compressed);
+      toast.success('시안 이미지가 성공적으로 불러와졌습니다.');
+    } catch {
+      toast.error('이미지 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsCompressing(false);
+      if (e.target) e.target.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,8 +131,9 @@ export function ConceptFormModal({
 
     try {
       setIsSubmitting(true);
+      const resolvedItemId = itemId || (designItems.length > 0 ? designItems[0].id : undefined);
       await onSubmit({
-        itemId: itemId || undefined,
+        itemId: resolvedItemId,
         title: title.trim(),
         description: description.trim(),
         designConcept: designConcept.trim(),
@@ -202,7 +208,12 @@ export function ConceptFormModal({
 
           <div className="flex flex-col sm:flex-row gap-3 items-start">
             <div className="w-full sm:w-44 h-32 rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 flex items-center justify-center overflow-hidden flex-shrink-0 relative group">
-              {thumbnailUrl ? (
+              {isCompressing ? (
+                <div className="text-center p-3 text-blue-600 flex flex-col items-center gap-1.5">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <span className="text-[11px] font-semibold">이미지 최적화 중...</span>
+                </div>
+              ) : thumbnailUrl ? (
                 <img
                   src={thumbnailUrl}
                   alt="Preview"
@@ -222,15 +233,26 @@ export function ConceptFormModal({
                 type="file"
                 accept="image/*"
                 onChange={handleFileUpload}
+                disabled={isCompressing}
                 className="hidden"
               />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-2.5 px-3 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 flex items-center justify-center gap-2 transition-colors"
+                disabled={isCompressing}
+                className="w-full py-2.5 px-3 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
               >
-                <UploadCloud className="w-4 h-4 text-blue-600" />
-                컴퓨터에서 이미지 파일 업로드
+                {isCompressing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                    이미지 최적화 중...
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-4 h-4 text-blue-600" />
+                    컴퓨터에서 이미지 파일 업로드
+                  </>
+                )}
               </button>
 
               <div className="flex items-center gap-1.5 text-xs text-zinc-500">
