@@ -261,7 +261,7 @@ export default function ClientSharePage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 {project.companyName && (
-                  <span className="text-xs font-semibold text-zinc-800 bg-zinc-100 px-2.5 py-0.5 shadow-sm">
+                  <span className="text-[14px] font-semibold text-zinc-800 bg-zinc-100 px-3 py-1 shadow-sm">
                     {project.companyName}
                   </span>
                 )}
