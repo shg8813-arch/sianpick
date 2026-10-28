@@ -1,0 +1,1050 @@
+import { IProjectRepository } from './project-repository';
+import {
+  Project,
+  Company,
+  DesignItem,
+  Concept,
+  ConceptVersion,
+  PinComment,
+  RevisionRequest,
+  Selection,
+  SelectionType,
+  ActivityType,
+  ActivityLog,
+  RevisionStatus,
+  ProjectEstimate,
+  StudioProfile,
+} from '@/types';
+import { INITIAL_DEMO_PROJECT, INITIAL_COMPANIES, INITIAL_CONCEPTS, INITIAL_ESTIMATE, INITIAL_STUDIO_PROFILE } from '@/lib/demo/sample-data';
+import { generateRunOfTheMillSvg } from '@/lib/utils/svg-generator';
+
+const STORAGE_KEY = 'sianpick_projects_store_v8';
+const STORAGE_KEY_V7 = 'sianpick_projects_store_v7';
+const STORAGE_KEY_V6 = 'sianpick_projects_store_v6';
+const STORAGE_KEY_V5 = 'sianpick_projects_store_v5';
+const STORAGE_KEY_V4 = 'sianpick_projects_store_v4';
+const STORAGE_KEY_V3 = 'sianpick_projects_store_v3';
+const STORAGE_KEY_V2 = 'sianpick_projects_store_v2';
+const STORAGE_KEY_V1 = 'sianpick_projects_store_v1';
+const COMPANIES_KEY = 'sianpick_companies_store_v4';
+const COMPANIES_KEY_V3 = 'sianpick_companies_store_v3';
+const COMPANIES_KEY_V2 = 'sianpick_companies_store_v2';
+const COMPANIES_KEY_V1 = 'sianpick_companies_store_v1';
+const STUDIO_PROFILE_KEY = 'sianpick_studio_profile_v1';
+
+export class DemoProjectRepository implements IProjectRepository {
+  private ensureThreeConceptsPerItem(project: Project): Project {
+    const items = project.designItems || [];
+    let updatedConcepts = [...(project.concepts || [])];
+    let changed = false;
+
+    items.forEach((item) => {
+      const itemConcepts = updatedConcepts.filter((c) => c.itemId === item.id);
+      if (itemConcepts.length < 3) {
+        changed = true;
+        const missingCount = 3 - itemConcepts.length;
+        for (let i = 1; i <= missingCount; i++) {
+          const num = itemConcepts.length + i;
+          let svgType: 'logo-1' | 'logo-2' | 'logo-3' | 'cup-1' | 'cup-2' | 'cup-3' | 'menu-1' | 'menu-2' | 'menu-3' = 'logo-1';
+          if (item.name.includes('로고') || item.name.toLowerCase().includes('logo')) {
+            svgType = num === 2 ? 'logo-2' : num === 3 ? 'logo-3' : 'logo-1';
+          } else if (item.name.includes('컵') || item.name.includes('슬리브') || item.name.toLowerCase().includes('cup')) {
+            svgType = num === 2 ? 'cup-2' : num === 3 ? 'cup-3' : 'cup-1';
+          } else {
+            svgType = num === 2 ? 'menu-2' : num === 3 ? 'menu-3' : 'menu-1';
+          }
+
+          const newConceptId = `concept-${item.id}-${num}-${Date.now()}`;
+          const newSvg = generateRunOfTheMillSvg(svgType, item.name, `시안 ${num}`);
+          const newConcept: Concept = {
+            id: newConceptId,
+            projectId: project.id,
+            itemId: item.id,
+            title: `시안 ${num} — ${item.name} 비주얼 제안`,
+            description: `런오브더밀의 감각적인 무드를 반영한 ${item.name}의 ${num}번째 테스트 시안입니다.`,
+            designConcept: `공간과 제품의 일체감을 높이고 미니멀한 브랜드 경험을 제공하도록 그리드를 설계했습니다.`,
+            colorFontDescription: '모노크롬 잉크(#09090B), 클린 화이트(#FFFFFF)',
+            usageRecommendation: '매장 비치 및 패키지 인쇄물 적용',
+            thumbnailUrl: newSvg,
+            displayOrder: num,
+            isPublic: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            versions: [
+              {
+                id: `ver-${newConceptId}-1`,
+                conceptId: newConceptId,
+                versionNumber: 1,
+                imageUrl: newSvg,
+                changeSummary: `시안 ${num} 초기 제안본`,
+                isFinal: false,
+                createdAt: new Date().toISOString(),
+              },
+            ],
+          };
+          updatedConcepts.push(newConcept);
+        }
+      }
+    });
+
+    if (changed) {
+      return {
+        ...project,
+        concepts: updatedConcepts,
+      };
+    }
+    return project;
+  }
+
+  private getStorage(): Project[] {
+    if (typeof window === 'undefined') {
+      return [INITIAL_DEMO_PROJECT];
+    }
+    try {
+      let raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        // Check if v4, v3, v2 or v1 existed and migrate custom projects
+        const prevRaw =
+          window.localStorage.getItem(STORAGE_KEY_V4) ||
+          window.localStorage.getItem(STORAGE_KEY_V3) ||
+          window.localStorage.getItem(STORAGE_KEY_V2) ||
+          window.localStorage.getItem(STORAGE_KEY_V1);
+        let projects: Project[] = [INITIAL_DEMO_PROJECT];
+        if (prevRaw) {
+          try {
+            const list: Project[] = JSON.parse(prevRaw);
+            const userCustomProjects = list.filter(
+              (p) => p.id !== 'demo-project-lumiere' && p.id !== 'demo-project-runofthemill'
+            );
+            projects = [INITIAL_DEMO_PROJECT, ...userCustomProjects];
+          } catch {
+            // ignore
+          }
+        }
+        projects = projects.map((p) => {
+          const updated = this.ensureThreeConceptsPerItem(p);
+          const itemCount = updated.designItems?.length || 1;
+          if (p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')) {
+            updated.estimate = updated.estimate || INITIAL_ESTIMATE;
+            updated.feedbackTokensTotal = 15; // 3항목 * 5
+            updated.maxRevisionCount = 9; // 3항목 * 3
+          } else {
+            updated.feedbackTokensTotal = updated.feedbackTokensTotal ?? itemCount * 5;
+            updated.maxRevisionCount = updated.maxRevisionCount ?? itemCount * 3;
+          }
+          updated.feedbackTokensUsed = updated.feedbackTokensUsed ?? (updated.comments?.filter((c) => c.authorType === 'client').length || 0);
+          return updated;
+        });
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+        return projects;
+      }
+
+      let projects: Project[] = JSON.parse(raw);
+      // Ensure INITIAL_DEMO_PROJECT is present or updated if needed
+      const hasRunOfTheMill = projects.some(
+        (p) => p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')
+      );
+      if (!hasRunOfTheMill) {
+        projects.unshift(INITIAL_DEMO_PROJECT);
+      }
+      
+      // Ensure all projects have token counts and estimate
+      let modified = false;
+      projects = projects.map((p) => {
+        let updated = this.ensureThreeConceptsPerItem(p);
+        const itemCount = updated.designItems?.length || 1;
+        if ((p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')) && !updated.estimate) {
+          updated = { ...updated, estimate: INITIAL_ESTIMATE };
+          modified = true;
+        }
+        if (updated.feedbackTokensTotal === undefined || updated.feedbackTokensTotal === 20) {
+          updated = { ...updated, feedbackTokensTotal: itemCount * 5 };
+          modified = true;
+        }
+        if (updated.maxRevisionCount === undefined || updated.maxRevisionCount === 3) {
+          updated = { ...updated, maxRevisionCount: itemCount * 3 };
+          modified = true;
+        }
+        if (updated.feedbackTokensUsed === undefined) {
+          const clientCommentCount = updated.comments?.filter((c) => c.authorType === 'client').length || 0;
+          updated = { ...updated, feedbackTokensUsed: clientCommentCount };
+          modified = true;
+        }
+        if (updated !== p) modified = true;
+        return updated;
+      });
+
+      if (modified) {
+        this.saveStorage(projects);
+      }
+      return projects;
+    } catch (e) {
+      console.warn('Failed to read from localStorage, using in-memory demo data', e);
+      return [INITIAL_DEMO_PROJECT];
+    }
+  }
+
+  private saveStorage(projects: Project[]): void {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+    } catch (e) {
+      console.error('Failed to save to localStorage', e);
+    }
+  }
+
+  private getCompaniesStorage(): Company[] {
+    if (typeof window === 'undefined') {
+      return INITIAL_COMPANIES;
+    }
+    try {
+      const item = window.localStorage.getItem(COMPANIES_KEY);
+      if (!item) {
+        window.localStorage.setItem(COMPANIES_KEY, JSON.stringify(INITIAL_COMPANIES));
+        return INITIAL_COMPANIES;
+      }
+      const list: Company[] = JSON.parse(item);
+      if (!list.some((c) => c.id === 'company-runofthemill' || c.name.includes('런오브더밀'))) {
+        const merged = [...INITIAL_COMPANIES, ...list.filter((c) => c.id !== 'company-lumiere')];
+        window.localStorage.setItem(COMPANIES_KEY, JSON.stringify(merged));
+        return merged;
+      }
+      return list;
+    } catch {
+      return INITIAL_COMPANIES;
+    }
+  }
+
+  private saveCompaniesStorage(companies: Company[]): void {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(COMPANIES_KEY, JSON.stringify(companies));
+    } catch (e) {
+      console.error('Failed to save companies to localStorage', e);
+    }
+  }
+
+  async resetDemoData(): Promise<void> {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify([INITIAL_DEMO_PROJECT]));
+      window.localStorage.setItem(COMPANIES_KEY, JSON.stringify(INITIAL_COMPANIES));
+    }
+  }
+
+  // Company management
+  async getCompanies(): Promise<Company[]> {
+    return this.getCompaniesStorage();
+  }
+
+  async getCompanyById(id: string): Promise<Company | null> {
+    const list = this.getCompaniesStorage();
+    return list.find((c) => c.id === id) || null;
+  }
+
+  async createCompany(data: {
+    name: string;
+    contactPerson: string;
+    email?: string;
+    phone?: string;
+    memo?: string;
+  }): Promise<Company> {
+    const companies = this.getCompaniesStorage();
+    const newCompany: Company = {
+      id: `company-${Date.now()}`,
+      name: data.name,
+      contactPerson: data.contactPerson,
+      email: data.email,
+      phone: data.phone,
+      memo: data.memo,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    companies.unshift(newCompany);
+    this.saveCompaniesStorage(companies);
+    return newCompany;
+  }
+
+  async updateCompany(id: string, updates: Partial<Company>): Promise<Company> {
+    const companies = this.getCompaniesStorage();
+    const idx = companies.findIndex((c) => c.id === id);
+    if (idx === -1) throw new Error('업체를 찾을 수 없습니다.');
+    companies[idx] = {
+      ...companies[idx],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveCompaniesStorage(companies);
+    return companies[idx];
+  }
+
+  async deleteCompany(id: string): Promise<void> {
+    const companies = this.getCompaniesStorage();
+    const filtered = companies.filter((c) => c.id !== id);
+    this.saveCompaniesStorage(filtered);
+  }
+
+  // Projects
+  async getProjects(): Promise<Project[]> {
+    return this.getStorage();
+  }
+
+  async getProjectsByCompany(companyId: string): Promise<Project[]> {
+    const projects = this.getStorage();
+    return projects.filter((p) => p.companyId === companyId);
+  }
+
+  async getProjectById(id: string): Promise<Project | null> {
+    const projects = this.getStorage();
+    let proj = projects.find((p) => p.id === id);
+    if (!proj && (id === 'sample-urban-roasters' || id === 'demo-project-lumiere' || id === 'demo-project-runofthemill')) {
+      proj = projects.find((p) => p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')) || projects[0] || null;
+    }
+    return proj || null;
+  }
+
+  async getProjectByShareToken(token: string): Promise<Project | null> {
+    const projects = this.getStorage();
+    let proj = projects.find((p) => p.shareToken === token);
+    if (!proj && (token === 'runofthemill-sample-2026' || token === 'lumiere-sample-2026' || token === 'share-urban-sample-01')) {
+      proj = projects.find((p) => p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')) || projects[0] || null;
+    }
+    return proj || null;
+  }
+
+  async createProject(data: {
+    companyId?: string;
+    title: string;
+    clientName: string;
+    clientEmail?: string;
+    description?: string;
+    dueDate?: string;
+    maxRevisionCount: number;
+    maxSelectionCount: number;
+    watermarkEnabled?: boolean;
+    downloadEnabled?: boolean;
+    worldcupEnabled?: boolean;
+    shareExpiresAt?: string;
+    sharePasswordHash?: string;
+  }): Promise<Project> {
+    const projects = this.getStorage();
+    const newId = `proj-${Date.now()}`;
+    const token = `share-${Math.random().toString(36).substring(2, 10)}`;
+
+    let companyName = data.clientName;
+    if (data.companyId) {
+      const comp = await this.getCompanyById(data.companyId);
+      if (comp) companyName = comp.name;
+    }
+
+    const newProject: Project = {
+      id: newId,
+      companyId: data.companyId,
+      companyName,
+      ownerId: 'demo-designer-id',
+      title: data.title,
+      clientName: data.clientName,
+      clientEmail: data.clientEmail,
+      description: data.description,
+      status: 'in_review',
+      dueDate: data.dueDate,
+      maxRevisionCount: data.maxRevisionCount || 3,
+      usedRevisionCount: 0,
+      maxSelectionCount: data.maxSelectionCount || 1,
+      shareToken: token,
+      shareExpiresAt: data.shareExpiresAt,
+      sharePasswordHash: data.sharePasswordHash,
+      watermarkEnabled: !!data.watermarkEnabled,
+      downloadEnabled: data.downloadEnabled !== false,
+      worldcupEnabled: data.worldcupEnabled ?? true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      designItems: [],
+      concepts: [],
+      comments: [],
+      revisionRequests: [],
+      selections: [],
+      activityLogs: [
+        {
+          id: `log-${Date.now()}`,
+          projectId: newId,
+          activityType: 'page_view',
+          description: '프로젝트가 생성되었습니다.',
+          createdAt: new Date().toISOString(),
+        },
+      ],
+    };
+
+    projects.unshift(newProject);
+    this.saveStorage(projects);
+    return newProject;
+  }
+
+  async updateProject(id: string, updates: Partial<Project>): Promise<Project> {
+    const projects = this.getStorage();
+    const idx = projects.findIndex((p) => p.id === id);
+    if (idx === -1) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    projects[idx] = {
+      ...projects[idx],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveStorage(projects);
+    return projects[idx];
+  }
+
+  async deleteProject(id: string): Promise<void> {
+    const projects = this.getStorage();
+    const filtered = projects.filter((p) => p.id !== id);
+    this.saveStorage(filtered);
+  }
+
+  // Design Items
+  async addDesignItem(
+    projectId: string,
+    data: { name: string; description?: string; worldcupEnabled?: boolean }
+  ): Promise<DesignItem> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    const newItem: DesignItem = {
+      id: `item-${Date.now()}`,
+      projectId,
+      name: data.name.trim(),
+      description: data.description?.trim(),
+      displayOrder: (project.designItems?.length || 0) + 1,
+      worldcupEnabled: data.worldcupEnabled ?? true,
+      createdAt: new Date().toISOString(),
+    };
+
+    project.designItems = [...(project.designItems || []), newItem];
+    // 디자인항목당 5개 토큰 및 3회 수정횟수 추가
+    project.feedbackTokensTotal = (project.feedbackTokensTotal || 0) + 5;
+    project.maxRevisionCount = (project.maxRevisionCount || 0) + 3;
+    this.saveStorage(projects);
+    return newItem;
+  }
+
+  async updateDesignItem(
+    projectId: string,
+    itemId: string,
+    updates: Partial<DesignItem>
+  ): Promise<DesignItem> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project || !project.designItems) throw new Error('디자인 항목을 찾을 수 없습니다.');
+
+    const idx = project.designItems.findIndex((item) => item.id === itemId);
+    if (idx === -1) throw new Error('디자인 항목을 찾을 수 없습니다.');
+
+    project.designItems[idx] = {
+      ...project.designItems[idx],
+      ...updates,
+    };
+    this.saveStorage(projects);
+    return project.designItems[idx];
+  }
+
+  async deleteDesignItem(projectId: string, itemId: string): Promise<void> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project || !project.designItems) return;
+
+    project.designItems = project.designItems.filter((item) => item.id !== itemId);
+    if (project.concepts) {
+      project.concepts = project.concepts.filter((c) => c.itemId !== itemId);
+    }
+    project.feedbackTokensTotal = Math.max(5, (project.feedbackTokensTotal || 5) - 5);
+    project.maxRevisionCount = Math.max(3, (project.maxRevisionCount || 3) - 3);
+    this.saveStorage(projects);
+  }
+
+  async reorderDesignItems(projectId: string, itemIds: string[]): Promise<void> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project || !project.designItems) return;
+
+    const itemMap = new Map(project.designItems.map((item) => [item.id, item]));
+    project.designItems = itemIds
+      .map((id, index) => {
+        const item = itemMap.get(id);
+        if (item) item.displayOrder = index + 1;
+        return item;
+      })
+      .filter((item): item is DesignItem => !!item);
+
+    this.saveStorage(projects);
+  }
+
+  // Concepts
+  async addConcept(
+    projectId: string,
+    data: {
+      itemId?: string;
+      title: string;
+      description?: string;
+      designConcept?: string;
+      colorFontDescription?: string;
+      usageRecommendation?: string;
+      thumbnailUrl: string;
+      isPublic?: boolean;
+      displayOrder?: number;
+      linkEnabled?: boolean;
+      linkTitle?: string;
+      linkUrl?: string;
+    }
+  ): Promise<Concept> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    const newConceptId = `concept-${Date.now()}`;
+    const newConcept: Concept = {
+      id: newConceptId,
+      projectId,
+      itemId: data.itemId,
+      title: data.title,
+      description: data.description,
+      designConcept: data.designConcept,
+      colorFontDescription: data.colorFontDescription,
+      usageRecommendation: data.usageRecommendation,
+      thumbnailUrl: data.thumbnailUrl,
+      displayOrder: data.displayOrder ?? ((project.concepts?.length || 0) + 1),
+      isPublic: data.isPublic ?? true,
+      linkEnabled: data.linkEnabled ?? false,
+      linkTitle: data.linkTitle,
+      linkUrl: data.linkUrl,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      versions: [
+        {
+          id: `ver-${Date.now()}`,
+          conceptId: newConceptId,
+          versionNumber: 1,
+          imageUrl: data.thumbnailUrl,
+          changeSummary: '최초 등록 시안',
+          isFinal: false,
+          createdAt: new Date().toISOString(),
+        },
+      ],
+    };
+
+    project.concepts = [...(project.concepts || []), newConcept];
+    this.saveStorage(projects);
+    return newConcept;
+  }
+
+  async updateConcept(
+    projectId: string,
+    conceptId: string,
+    updates: Partial<Concept>
+  ): Promise<Concept> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project || !project.concepts) throw new Error('시안을 찾을 수 없습니다.');
+
+    const cIdx = project.concepts.findIndex((c) => c.id === conceptId);
+    if (cIdx === -1) throw new Error('시안을 찾을 수 없습니다.');
+
+    project.concepts[cIdx] = {
+      ...project.concepts[cIdx],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveStorage(projects);
+    return project.concepts[cIdx];
+  }
+
+  async deleteConcept(projectId: string, conceptId: string): Promise<void> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project || !project.concepts) return;
+
+    project.concepts = project.concepts.filter((c) => c.id !== conceptId);
+    this.saveStorage(projects);
+  }
+
+  async reorderConcepts(projectId: string, conceptIds: string[]): Promise<void> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project || !project.concepts) return;
+
+    const conceptMap = new Map(project.concepts.map((c) => [c.id, c]));
+    project.concepts = conceptIds
+      .map((id, index) => {
+        const c = conceptMap.get(id);
+        if (c) c.displayOrder = index + 1;
+        return c;
+      })
+      .filter((c): c is Concept => !!c);
+
+    this.saveStorage(projects);
+  }
+
+  async addConceptVersion(
+    projectId: string,
+    conceptId: string,
+    data: { imageUrl: string; changeSummary?: string; revisionRequestId?: string; isFinal?: boolean }
+  ): Promise<ConceptVersion> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project || !project.concepts) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    const concept = project.concepts.find((c) => c.id === conceptId);
+    if (!concept) throw new Error('시안을 찾을 수 없습니다.');
+
+    const currentVersions =
+      concept.versions && concept.versions.length > 0
+        ? [...concept.versions]
+        : [
+            {
+              id: `ver-${conceptId}-1`,
+              conceptId,
+              versionNumber: 1,
+              imageUrl: concept.thumbnailUrl,
+              changeSummary: '1차 제안 시안',
+              isFinal: false,
+              createdAt: concept.createdAt || new Date().toISOString(),
+            },
+          ];
+
+    const nextVerNumber = currentVersions.length + 1;
+    const isFinalVersion = Boolean(data.isFinal);
+
+    const newVersion: ConceptVersion = {
+      id: `ver-${Date.now()}`,
+      conceptId,
+      versionNumber: nextVerNumber,
+      imageUrl: data.imageUrl,
+      changeSummary: data.changeSummary || (isFinalVersion ? '최종 확정 시안' : `v${nextVerNumber} 수정본`),
+      revisionRequestId: data.revisionRequestId,
+      isFinal: isFinalVersion,
+      createdAt: new Date().toISOString(),
+    };
+
+    concept.versions = [...currentVersions, newVersion];
+    concept.thumbnailUrl = data.imageUrl;
+    concept.updatedAt = new Date().toISOString();
+
+    const activityMessage = isFinalVersion
+      ? `"${concept.title}"의 최종 확정 시안(FINAL)이 등록되었습니다.`
+      : `"${concept.title}"의 새 수정본(v${nextVerNumber})이 등록되었습니다.`;
+
+    await this.logActivity(projectId, 'version_add', activityMessage);
+
+    this.saveStorage(projects);
+    return newVersion;
+  }
+
+  async addComment(
+    commentData: Omit<PinComment, 'id' | 'createdAt'>
+  ): Promise<PinComment> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === commentData.projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    const newComment: PinComment = {
+      ...commentData,
+      id: `comment-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    project.comments = [...(project.comments || []), newComment];
+    if (commentData.authorType === 'client') {
+      project.feedbackTokensUsed = (project.feedbackTokensUsed || 0) + 1;
+    }
+    this.saveStorage(projects);
+
+    const concept = project.concepts?.find((c) => c.id === commentData.conceptId);
+    await this.logActivity(
+      project.id,
+      'comment_create',
+      `${commentData.authorName}(${commentData.authorType === 'client' ? '고객' : '디자이너'})님이 "${concept?.title || '시안'}"에 코멘트를 남겼습니다.`
+    );
+
+    return newComment;
+  }
+
+  async updateCommentStatus(
+    projectId: string,
+    commentId: string,
+    status: 'open' | 'resolved'
+  ): Promise<void> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project || !project.comments) return;
+
+    const comment = project.comments.find((c) => c.id === commentId);
+    if (comment) {
+      comment.status = status;
+      this.saveStorage(projects);
+    }
+  }
+
+  async submitRevisionRequest(
+    projectId: string,
+    content: string
+  ): Promise<{ revision: RevisionRequest; remainingRevisions: number }> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    const remaining = project.maxRevisionCount - project.usedRevisionCount;
+    if (remaining <= 0) {
+      throw new Error('기본 수정 횟수를 모두 사용했습니다.');
+    }
+
+    const nextRevNumber = project.usedRevisionCount + 1;
+    const newRevision: RevisionRequest = {
+      id: `rev-${Date.now()}`,
+      projectId,
+      revisionNumber: nextRevNumber,
+      content,
+      status: 'submitted',
+      submittedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+
+    project.usedRevisionCount += 1;
+    project.status = 'revising';
+    project.revisionRequests = [...(project.revisionRequests || []), newRevision];
+
+    await this.logActivity(
+      projectId,
+      'revision_submit',
+      `고객이 제${nextRevNumber}차 수정 요청서를 제출했습니다. (잔여: ${project.maxRevisionCount - project.usedRevisionCount}회)`
+    );
+
+    this.saveStorage(projects);
+    return {
+      revision: newRevision,
+      remainingRevisions: project.maxRevisionCount - project.usedRevisionCount,
+    };
+  }
+
+  async updateRevisionStatus(
+    projectId: string,
+    revisionId: string,
+    status: RevisionStatus
+  ): Promise<void> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project || !project.revisionRequests) return;
+
+    const rev = project.revisionRequests.find((r) => r.id === revisionId);
+    if (rev) {
+      rev.status = status;
+      if (status === 'client_confirmed') {
+        rev.completedAt = new Date().toISOString();
+      }
+      await this.logActivity(
+        projectId,
+        'revision_status_change',
+        `제${rev.revisionNumber}차 수정 요청 상태가 [${status}]로 변경되었습니다.`
+      );
+      this.saveStorage(projects);
+    }
+  }
+
+  async updateSelection(
+    projectId: string,
+    conceptId: string,
+    selectionType: SelectionType,
+    reason?: string,
+    itemId?: string
+  ): Promise<Selection> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    const selections = project.selections || [];
+    let existingIdx = -1;
+    if (itemId) {
+      existingIdx = selections.findIndex((s) => s.itemId === itemId);
+    } else {
+      existingIdx = selections.findIndex((s) => s.conceptId === conceptId);
+    }
+
+    const concept = project.concepts?.find((c) => c.id === conceptId);
+    const targetItemId = itemId || concept?.itemId;
+
+    if (existingIdx >= 0) {
+      selections[existingIdx] = {
+        ...selections[existingIdx],
+        conceptId,
+        itemId: targetItemId,
+        selectionType,
+        reason: reason || selections[existingIdx].reason,
+        selectedAt: new Date().toISOString(),
+      };
+      this.saveStorage(projects);
+      return selections[existingIdx];
+    } else {
+      const newSelection: Selection = {
+        id: `sel-${Date.now()}`,
+        projectId,
+        itemId: targetItemId,
+        conceptId,
+        selectionType,
+        reason,
+        isFinal: false,
+        selectedAt: new Date().toISOString(),
+      };
+      project.selections = [...selections, newSelection];
+
+      await this.logActivity(
+        projectId,
+        'concept_select',
+        `고객이 "${concept?.title || '시안'}"을(를) 선호 시안 후보로 선택했습니다.`
+      );
+
+      this.saveStorage(projects);
+      return newSelection;
+    }
+  }
+
+  async cancelItemSelection(
+    projectId: string,
+    itemId: string
+  ): Promise<{ refundedTokens: number; hasAdminChecked: boolean }> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    // 1. Remove selection for this item
+    const prevSelections = project.selections || [];
+    project.selections = prevSelections.filter((s) => s.itemId !== itemId);
+
+    // 2. Find feedbacks written by client for this item
+    const itemConceptIds = (project.concepts || [])
+      .filter((c) => c.itemId === itemId)
+      .map((c) => c.id);
+    const itemClientComments = (project.comments || []).filter(
+      (c) =>
+        (c.itemId === itemId || itemConceptIds.includes(c.conceptId)) &&
+        c.authorType === 'client'
+    );
+
+    const hasAdminChecked = itemClientComments.some((c) => c.status === 'resolved');
+
+    let refundedTokens = 0;
+    if (hasAdminChecked) {
+      refundedTokens = 0;
+      await this.logActivity(
+        projectId,
+        'concept_select',
+        '고객이 디자인 항목의 시안 선택을 취소했습니다. (관리자 확인 완료 피드백 존재로 토큰 미환급)'
+      );
+    } else {
+      refundedTokens = itemClientComments.length;
+      if (refundedTokens > 0) {
+        const uncheckedCommentIds = new Set(itemClientComments.map((c) => c.id));
+        project.comments = (project.comments || []).filter((c) => !uncheckedCommentIds.has(c.id));
+        project.feedbackTokensUsed = Math.max(0, (project.feedbackTokensUsed || refundedTokens) - refundedTokens);
+      }
+      await this.logActivity(
+        projectId,
+        'concept_select',
+        `고객이 디자인 항목의 시안 선택을 취소했습니다. (미확인 피드백 ${refundedTokens}건 취소 및 토큰 ${refundedTokens}개 자동 복구)`
+      );
+    }
+
+    this.saveStorage(projects);
+    return { refundedTokens, hasAdminChecked };
+  }
+
+  async approveFinalProject(projectId: string, conceptId?: string): Promise<void> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    project.status = 'approved';
+
+    if (conceptId) {
+      const concept = project.concepts?.find((c) => c.id === conceptId);
+      project.selections = [
+        {
+          id: `sel-final-${Date.now()}`,
+          projectId,
+          itemId: concept?.itemId,
+          conceptId,
+          selectionType: 'final',
+          isFinal: true,
+          selectedAt: new Date().toISOString(),
+        },
+      ];
+    } else {
+      project.selections = (project.selections || []).map((s) => ({
+        ...s,
+        selectionType: 'final',
+        isFinal: true,
+      }));
+    }
+
+    await this.logActivity(
+      projectId,
+      'final_approve',
+      `고객이 프로젝트의 최종 시안들을 확정 승인했습니다.`
+    );
+
+    this.saveStorage(projects);
+  }
+
+  async logActivity(
+    projectId: string,
+    activityType: ActivityType,
+    description: string,
+    metadata?: Record<string, any>
+  ): Promise<void> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) return;
+
+    const newLog: ActivityLog = {
+      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      projectId,
+      activityType,
+      description,
+      metadata,
+      createdAt: new Date().toISOString(),
+    };
+
+    project.activityLogs = [newLog, ...(project.activityLogs || [])];
+    this.saveStorage(projects);
+  }
+
+  async saveWorldcupResult(
+    projectId: string,
+    conceptId: string,
+    participantName: string = '고객',
+    itemId?: string
+  ): Promise<void> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) return;
+
+    const concept = project.concepts?.find((c) => c.id === conceptId);
+    const targetItemId = itemId || concept?.itemId;
+
+    const selections = (project.selections || []).filter(
+      (s) => !(s.selectionType === 'worldcup_winner' && s.itemId === targetItemId)
+    );
+
+    selections.push({
+      id: `sel-wc-${Date.now()}`,
+      projectId,
+      itemId: targetItemId,
+      conceptId,
+      selectionType: 'worldcup_winner',
+      reason: '시안 월드컵 최종 우승',
+      isFinal: false,
+      selectedAt: new Date().toISOString(),
+    });
+    project.selections = selections;
+
+    await this.logActivity(
+      projectId,
+      'worldcup_complete',
+      `${participantName}님이 시안 월드컵을 완료했습니다. 우승: "${concept?.title || '시안'}"`,
+      { winnerId: conceptId, winnerTitle: concept?.title, itemId: targetItemId }
+    );
+
+    this.saveStorage(projects);
+  }
+
+  async updateProjectEstimate(projectId: string, estimate: ProjectEstimate): Promise<ProjectEstimate> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    project.estimate = {
+      ...estimate,
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveStorage(projects);
+    return project.estimate;
+  }
+
+  async useFeedbackToken(projectId: string): Promise<{ remainingTokens: number; usedTokens: number }> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    const total = project.feedbackTokensTotal ?? 20;
+    const currentUsed = project.feedbackTokensUsed ?? 0;
+    const nextUsed = currentUsed + 1;
+
+    project.feedbackTokensUsed = nextUsed;
+    this.saveStorage(projects);
+
+    return {
+      remainingTokens: Math.max(0, total - nextUsed),
+      usedTokens: nextUsed,
+    };
+  }
+
+  async addFeedbackTokens(projectId: string, amount: number): Promise<number> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    const newTotal = (project.feedbackTokensTotal || 0) + amount;
+    project.feedbackTokensTotal = newTotal;
+    this.saveStorage(projects);
+    return newTotal;
+  }
+
+  async addRevisionCount(projectId: string, amount: number): Promise<number> {
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    const newMax = (project.maxRevisionCount || 0) + amount;
+    project.maxRevisionCount = newMax;
+    this.saveStorage(projects);
+    return newMax;
+  }
+
+  // Studio Profile Management (대시보드 메인에서 관리되는 로고 & 견적 공급자 정보)
+  async getStudioProfile(): Promise<StudioProfile> {
+    if (typeof window === 'undefined') return INITIAL_STUDIO_PROFILE;
+    try {
+      const stored = localStorage.getItem(STUDIO_PROFILE_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      localStorage.setItem(STUDIO_PROFILE_KEY, JSON.stringify(INITIAL_STUDIO_PROFILE));
+      return INITIAL_STUDIO_PROFILE;
+    } catch {
+      return INITIAL_STUDIO_PROFILE;
+    }
+  }
+
+  async updateStudioProfile(updates: Partial<StudioProfile>): Promise<StudioProfile> {
+    const current = await this.getStudioProfile();
+    const updated: StudioProfile = {
+      ...current,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STUDIO_PROFILE_KEY, JSON.stringify(updated));
+      } catch (err) {
+        console.error('Failed to save studio profile', err);
+      }
+    }
+
+    // If logo was updated, synchronize to all projects' companyLogoUrl
+    if (updates.logoUrl !== undefined) {
+      const projects = this.getStorage();
+      projects.forEach((p) => {
+        p.companyLogoUrl = updates.logoUrl;
+      });
+      this.saveStorage(projects);
+    }
+
+    return updated;
+  }
+}
