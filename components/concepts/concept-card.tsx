@@ -59,12 +59,14 @@ export function ConceptCard({
             <span className="text-[10px] font-semibold tracking-[0.2em] text-zinc-400 uppercase block">
               CONCEPT {String(concept.displayOrder).padStart(2, '0')}
             </span>
-            <h3
-              onClick={onOpenViewer}
-              className="text-xl sm:text-2xl font-extrabold text-zinc-900 tracking-tight cursor-pointer hover:text-blue-600 transition-colors"
-            >
-              {concept.title}
-            </h3>
+            {concept.title && (
+              <h3
+                onClick={onOpenViewer}
+                className="text-xl sm:text-2xl font-extrabold text-zinc-900 tracking-tight cursor-pointer hover:text-blue-600 transition-colors"
+              >
+                {concept.title}
+              </h3>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
@@ -115,7 +117,7 @@ export function ConceptCard({
         >
           <img
             src={concept.thumbnailUrl}
-            alt={concept.title}
+            alt={concept.title || `CONCEPT ${concept.displayOrder}`}
             className="w-full h-full object-contain p-4 group-hover/img:scale-105 transition-transform duration-500"
           />
 

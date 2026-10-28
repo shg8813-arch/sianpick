@@ -1368,7 +1368,7 @@ export default function ProjectDetailPage() {
                     className="p-5 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-4"
                   >
                     <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-base text-zinc-900">{concept.title}</h3>
+                      <h3 className="font-bold text-base text-zinc-900">{concept.title || `시안 ${concept.displayOrder || ''}`}</h3>
                       {vList.length > 1 && (
                         <button
                           type="button"
