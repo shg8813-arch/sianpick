@@ -1,5 +1,5 @@
 import { Project, Concept, PinComment, RevisionRequest, ActivityLog, Selection, Company, DesignItem, ProjectEstimate, StudioProfile } from '@/types';
-import { generateUrbanForestSvg } from '@/lib/utils/svg-generator';
+import { generateUrbanForestSvg, generateTattooSvg } from '@/lib/utils/svg-generator';
 
 const svgLogo1 = generateUrbanForestSvg('logo-1', '로고', '시안 1');
 const svgLogo2 = generateUrbanForestSvg('logo-2', '로고', '시안 2');
@@ -13,7 +13,22 @@ const svgMenu1 = generateUrbanForestSvg('menu-1', '쇼룸 메뉴판', '시안 1'
 const svgMenu2 = generateUrbanForestSvg('menu-2', '쇼룸 메뉴판', '시안 2');
 const svgMenu3 = generateUrbanForestSvg('menu-3', '쇼룸 메뉴판', '시안 3');
 
+// Tattoo Artist Sample SVGs
+const svgTattooFlash1 = generateTattooSvg('flash-1', '메인 플래시 도안', '시안 1');
+const svgTattooFlash2 = generateTattooSvg('flash-2', '메인 플래시 도안', '시안 2');
+const svgTattooFlash3 = generateTattooSvg('flash-3', '메인 플래시 도안', '시안 3');
+
+const svgTattooBody1 = generateTattooSvg('body-1', '신체 부위별 착색 목업', '시안 1');
+const svgTattooBody2 = generateTattooSvg('body-2', '신체 부위별 착색 목업', '시안 2');
+const svgTattooBody3 = generateTattooSvg('body-3', '신체 부위별 착색 목업', '시안 3');
+
+const svgTattooCare1 = generateTattooSvg('care-1', '시술 안내 & 케어 가이드', '시안 1');
+const svgTattooCare2 = generateTattooSvg('care-2', '시술 안내 & 케어 가이드', '시안 2');
+const svgTattooCare3 = generateTattooSvg('care-3', '시술 안내 & 케어 가이드', '시안 3');
+
 export const URBANFOREST_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 44" fill="none"><rect width="220" height="44" fill="%2309090b" rx="2"/><text x="18" y="27" fill="%23ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="13" letter-spacing="4">URBAN FOREST</text></svg>`;
+
+export const NOIR_INK_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 44" fill="none"><rect width="240" height="44" fill="%2309090b" rx="2"/><text x="16" y="27" fill="%23ffffff" font-family="'Pretendard', system-ui, sans-serif" font-weight="900" font-size="13" letter-spacing="4">NOIR INK ATELIER</text><circle cx="218" cy="22" r="3" fill="%23d4af37"/></svg>`;
 
 export const STUDIO_ATELIER_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 38" fill="none"><text x="2" y="25" fill="%2318181b" font-family="'Pretendard', system-ui, -apple-system, sans-serif" font-weight="900" font-size="16" letter-spacing="3.5">STUDIO ATELIER</text><circle cx="218" cy="14" r="3" fill="%2318181b"/></svg>`;
 
@@ -50,6 +65,16 @@ export const INITIAL_COMPANIES: Company[] = [
     memo: '플라워 부티크 로고 및 포장 패키지 디자인 문의',
     createdAt: '2026-10-17T11:00:00Z',
     updatedAt: '2026-10-17T11:00:00Z',
+  },
+  {
+    id: 'company-tattoo-client',
+    name: '한소희 (커스텀 타투 의뢰)',
+    contactPerson: '한소희 고객님',
+    email: 'sohee.tattoo@gmail.com',
+    phone: '010-3819-7724',
+    memo: '전완근 안쪽 보태니컬 뱀 & 와일드 로즈 파인라인 1:1 맞춤 커스텀 도안 제작 및 시술 의뢰',
+    createdAt: '2026-10-22T10:00:00Z',
+    updatedAt: '2026-10-22T10:00:00Z',
   },
 ];
 
@@ -525,3 +550,484 @@ export const INITIAL_DEMO_PROJECT: Project = {
   selections: INITIAL_SELECTIONS,
   activityLogs: INITIAL_ACTIVITY_LOGS,
 };
+
+// ==========================================
+// Tattoo Artist Sample Project Data
+// ==========================================
+export const INITIAL_TATTOO_DESIGN_ITEMS: DesignItem[] = [
+  {
+    id: 'item-tattoo-flash',
+    projectId: 'demo-project-tattoo-noir',
+    name: '메인 플래시 도안',
+    description: '1:1 커스텀 드로잉 본안 — 섬세한 라인워크와 도트 명암 설계',
+    displayOrder: 1,
+    worldcupEnabled: false,
+    createdAt: '2026-10-22T10:30:00Z',
+  },
+  {
+    id: 'item-tattoo-placement',
+    projectId: 'demo-project-tattoo-noir',
+    name: '신체 부위별 착색 목업',
+    description: '실제 신체 곡선(전완근/상완/쇄골)에 맞춘 1:1 실물 가상 착색 프리뷰',
+    displayOrder: 2,
+    worldcupEnabled: false,
+    createdAt: '2026-10-22T10:35:00Z',
+  },
+  {
+    id: 'item-tattoo-care',
+    projectId: 'demo-project-tattoo-noir',
+    name: '시술 사양 & 케어 가이드',
+    description: '니들/잉크 스펙 시트, 1-14일차 애프터케어 프로토콜 및 독점 보증서',
+    displayOrder: 3,
+    worldcupEnabled: false,
+    createdAt: '2026-10-22T10:40:00Z',
+  },
+];
+
+export const INITIAL_TATTOO_CONCEPTS: Concept[] = [
+  // Item 1: 메인 플래시 도안 (3 concepts)
+  {
+    id: 'concept-tattoo-flash-1',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-flash',
+    title: '시안 1 — 보태니컬 뱀 & 와일드 로즈 (Botanical Serpent & Rose)',
+    description: '0803RL 극미세 니들로 섬세하게 휘감아 올라가는 뱀의 유려한 S자 곡선과 가시 돋친 야생 장미를 대비시킨 블랙워크 플래시입니다.',
+    designConcept: '신성기하학 원형 링과 별자리 도트워크를 배경에 배치하여 신비롭고 고혹적인 아티스틱 무드를 연출했습니다.',
+    colorFontDescription: '옵시디언 딥블랙(#09090B), 스털링 실버(#E4E4E7) / 기법: Fine-line & Dotwork',
+    usageRecommendation: '전완근 안쪽, 종아리 외측, 등 상단 척추 라인 타투',
+    thumbnailUrl: svgTattooFlash1,
+    displayOrder: 1,
+    isPublic: true,
+    createdAt: '2026-10-22T11:00:00Z',
+    updatedAt: '2026-10-22T11:00:00Z',
+    versions: [
+      {
+        id: 'ver-tattoo-flash-1',
+        conceptId: 'concept-tattoo-flash-1',
+        versionNumber: 1,
+        imageUrl: svgTattooFlash1,
+        changeSummary: '보태니컬 뱀 & 와일드 로즈 1차 제안본',
+        isFinal: false,
+        createdAt: '2026-10-22T11:00:00Z',
+      },
+    ],
+  },
+  {
+    id: 'concept-tattoo-flash-2',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-flash',
+    title: '시안 2 — 기하학적 나비 & 초승달 (Geometric Lunar Moth)',
+    description: '대칭적인 날개 구조와 성스러운 눈(Sacred Eye), 초승달의 달의 위상을 기하학적 수직 축으로 구성한 모던 타투입니다.',
+    designConcept: '단검 형태의 중심 축과 동심원 아우라 링으로 절제된 긴장감과 균형미를 극대화했습니다.',
+    colorFontDescription: '다이내믹 블랙(#09090B), 앤틱 골드 악센트(#D4AF37) / 기법: Geometric & Single Needle',
+    usageRecommendation: '상완 외측(어깨), 가슴 중앙(Sternum), 허벅지 앞면 타투',
+    thumbnailUrl: svgTattooFlash2,
+    displayOrder: 2,
+    isPublic: true,
+    createdAt: '2026-10-22T11:30:00Z',
+    updatedAt: '2026-10-22T11:30:00Z',
+    versions: [
+      {
+        id: 'ver-tattoo-flash-2',
+        conceptId: 'concept-tattoo-flash-2',
+        versionNumber: 1,
+        imageUrl: svgTattooFlash2,
+        changeSummary: '기하학적 루나 모스 1차 제안본',
+        isFinal: false,
+        createdAt: '2026-10-22T11:30:00Z',
+      },
+    ],
+  },
+  {
+    id: 'concept-tattoo-flash-3',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-flash',
+    title: '시안 3 — 미니멀 오리가미 & 나침반 성좌 (Minimal Origami Crane)',
+    description: '다면체 종이학의 입체적 폴리곤 셰이딩과 고객만의 의미 있는 서울 경위도 좌표를 마이크로 레터링으로 각인한 시안입니다.',
+    designConcept: '비상하는 종이학의 각진 면마다 그레이워시 톤을 달리하여 단조롭지 않은 입체감과 미니멀한 감성을 전달합니다.',
+    colorFontDescription: '모노크롬 잉크(#18181B), 그레이워시 30% / 기법: Micro-realism & Coordinates',
+    usageRecommendation: '쇄골 하단, 손목 안쪽, 발목 복사뼈 상단 타투',
+    thumbnailUrl: svgTattooFlash3,
+    displayOrder: 3,
+    isPublic: true,
+    createdAt: '2026-10-22T12:00:00Z',
+    updatedAt: '2026-10-22T12:00:00Z',
+    versions: [
+      {
+        id: 'ver-tattoo-flash-3',
+        conceptId: 'concept-tattoo-flash-3',
+        versionNumber: 1,
+        imageUrl: svgTattooFlash3,
+        changeSummary: '오리가미 크레인 & 성좌 좌표 초기안',
+        isFinal: false,
+        createdAt: '2026-10-22T12:00:00Z',
+      },
+    ],
+  },
+
+  // Item 2: 신체 부위별 착색 목업 (3 concepts)
+  {
+    id: 'concept-tattoo-placement-1',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-placement',
+    title: '시안 1 — 전완근 안쪽 (Forearm Inner) 1:1 스케일 프리뷰',
+    description: '손목 접힘선과 팔꿈치 안쪽 중심축에 맞춘 13.5cm x 6.8cm 실물 크기 가상 스텐실 착색 목업입니다.',
+    designConcept: '손목을 비틀거나 팔을 움직일 때 도안의 왜곡이 최소화되는 해부학적 황금 배치를 검증했습니다.',
+    colorFontDescription: '차콜 블랙(#18181B), 골드 치수선(#D4AF37) / 가상 부위: 전완 내측(팔 안쪽)',
+    usageRecommendation: '반팔 착용 시 자연스럽게 노출되는 데일리 타투 명당 부위',
+    thumbnailUrl: svgTattooBody1,
+    displayOrder: 1,
+    isPublic: true,
+    createdAt: '2026-10-22T12:30:00Z',
+    updatedAt: '2026-10-22T12:30:00Z',
+    versions: [
+      {
+        id: 'ver-tattoo-placement-1',
+        conceptId: 'concept-tattoo-placement-1',
+        versionNumber: 1,
+        imageUrl: svgTattooBody1,
+        changeSummary: '전완근 안쪽 실물 스케일 배치도',
+        isFinal: false,
+        createdAt: '2026-10-22T12:30:00Z',
+      },
+    ],
+  },
+  {
+    id: 'concept-tattoo-placement-2',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-placement',
+    title: '시안 2 — 상완 외측 어깨 라인 (Upper Shoulder) 밸런스 프리뷰',
+    description: '삼각근(Deltoid)의 둥근 입체 볼륨을 타고 감싸듯 떨어지는 11.0cm x 9.5cm 착용 목업입니다.',
+    designConcept: '어깨 관절의 굴곡을 고려하여 나비 날개 곡선이 근육 결을 따라 자연스럽게 흐르도록 설계했습니다.',
+    colorFontDescription: '다크 슬레이트(#27272A), 앰버 골드(#D4AF37) / 가상 부위: 상완 삼각근',
+    usageRecommendation: '민소매, 나시 및 반소매 티셔츠 끝선에 걸치는 세련된 부위',
+    thumbnailUrl: svgTattooBody2,
+    displayOrder: 2,
+    isPublic: true,
+    createdAt: '2026-10-22T13:00:00Z',
+    updatedAt: '2026-10-22T13:00:00Z',
+    versions: [
+      {
+        id: 'ver-tattoo-placement-2',
+        conceptId: 'concept-tattoo-placement-2',
+        versionNumber: 1,
+        imageUrl: svgTattooBody2,
+        changeSummary: '상완 외측 삼각근 입체 배치도',
+        isFinal: false,
+        createdAt: '2026-10-22T13:00:00Z',
+      },
+    ],
+  },
+  {
+    id: 'concept-tattoo-placement-3',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-placement',
+    title: '시안 3 — 쇄골 하단 곡선 (Collarbone Curve) 가로형 프리뷰',
+    description: '쇄골 뼈 바로 아래 1.5cm 지점을 수평으로 타고 흐르는 9.0cm x 7.5cm 섬세한 목업입니다.',
+    designConcept: '목걸이나 셔츠 칼라에 간섭받지 않으며 쇄골 라인의 우아한 선을 극대화하는 배치입니다.',
+    colorFontDescription: '소프트 블랙(#18181B), 가이드 그리드 / 가상 부위: 우측 쇄골 하단',
+    usageRecommendation: '블라우스나 오픈넥 착용 시 감성적인 포인트 타투',
+    thumbnailUrl: svgTattooBody3,
+    displayOrder: 3,
+    isPublic: true,
+    createdAt: '2026-10-22T13:30:00Z',
+    updatedAt: '2026-10-22T13:30:00Z',
+    versions: [
+      {
+        id: 'ver-tattoo-placement-3',
+        conceptId: 'concept-tattoo-placement-3',
+        versionNumber: 1,
+        imageUrl: svgTattooBody3,
+        changeSummary: '쇄골 하단 수평 배치도',
+        isFinal: false,
+        createdAt: '2026-10-22T13:30:00Z',
+      },
+    ],
+  },
+
+  // Item 3: 시술 사양 & 케어 가이드 (3 concepts)
+  {
+    id: 'concept-tattoo-care-1',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-care',
+    title: '시안 1 — 1~14일차 애프터케어 & 치유 프로토콜 가이드',
+    description: '방수 필름 부착/제거 요령, 비판텐 연고 도포 주기, 각질 탈각 주의사항 및 3개월 리터치 안내서입니다.',
+    designConcept: '단계별 치유 타임라인(1~3일 필름, 4~7일 연고, 8~14일 보습, 30일 본발색)을 카드형 인포그래픽으로 일목요연하게 전달합니다.',
+    colorFontDescription: '매트 블랙(#121214), 클린 화이트(#FFFFFF), 골드 악센트(#D4AF37)',
+    usageRecommendation: '시술 종료 후 고객 전달용 모바일 웹 카드 및 인쇄 리플렛',
+    thumbnailUrl: svgTattooCare1,
+    displayOrder: 1,
+    isPublic: true,
+    createdAt: '2026-10-22T14:00:00Z',
+    updatedAt: '2026-10-22T14:00:00Z',
+    versions: [
+      {
+        id: 'ver-tattoo-care-1',
+        conceptId: 'concept-tattoo-care-1',
+        versionNumber: 1,
+        imageUrl: svgTattooCare1,
+        changeSummary: '1-14일 치유 관리 프로토콜 가이드',
+        isFinal: false,
+        createdAt: '2026-10-22T14:00:00Z',
+      },
+    ],
+  },
+  {
+    id: 'concept-tattoo-care-2',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-care',
+    title: '시안 2 — 의료용 멸균 니들 & 비건 잉크 기술 사양서',
+    description: 'Kwang 0803RL 미세 니들, 다이내믹 그레이워시 3단계 비율 및 100% 일회용품 멸균 폐기 원칙을 증명하는 시트입니다.',
+    designConcept: '의료 등급의 위생 관리 프로세스와 ISO 9001 기준 소독 체계를 투명하게 공개하여 고객의 시술 불안을 해소합니다.',
+    colorFontDescription: '모노크롬 테크니컬 그리드 / 폰트: Monospace & Pretendard Bold',
+    usageRecommendation: '위생 및 시술 재료 신뢰 증빙용 사전 공유 카드',
+    thumbnailUrl: svgTattooCare2,
+    displayOrder: 2,
+    isPublic: true,
+    createdAt: '2026-10-22T14:30:00Z',
+    updatedAt: '2026-10-22T14:30:00Z',
+    versions: [
+      {
+        id: 'ver-tattoo-care-2',
+        conceptId: 'concept-tattoo-care-2',
+        versionNumber: 1,
+        imageUrl: svgTattooCare2,
+        changeSummary: '멸균 및 피그먼트 기술 사양서',
+        isFinal: false,
+        createdAt: '2026-10-22T14:30:00Z',
+      },
+    ],
+  },
+  {
+    id: 'concept-tattoo-care-3',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-care',
+    title: '시안 3 — 1인 1도안 영구 독점 보증서 (Authenticity Certificate)',
+    description: '오직 한소희 님만을 위해 제작되어 타인에게 절대 중복 시술되지 않음을 서약하는 공식 인증 보증서입니다.',
+    designConcept: '아티잔 타투 아틀리에의 장인 정신과 에디션 넘버링(NIR-2026-0881), 타투이스트 공식 서명을 기재한 영구 소장 카드입니다.',
+    colorFontDescription: '블랙 & 앤틱 골드 프레임(#D4AF37), 퓨어 화이트 서체',
+    usageRecommendation: '도안 확정 및 시술 완료 시 발급되는 VIP 고객 전용 디지털 보증서',
+    thumbnailUrl: svgTattooCare3,
+    displayOrder: 3,
+    isPublic: true,
+    createdAt: '2026-10-22T15:00:00Z',
+    updatedAt: '2026-10-22T15:00:00Z',
+    versions: [
+      {
+        id: 'ver-tattoo-care-3',
+        conceptId: 'concept-tattoo-care-3',
+        versionNumber: 1,
+        imageUrl: svgTattooCare3,
+        changeSummary: '1인 1도안 공식 독점 보증서',
+        isFinal: false,
+        createdAt: '2026-10-22T15:00:00Z',
+      },
+    ],
+  },
+];
+
+export const INITIAL_TATTOO_COMMENTS: PinComment[] = [
+  {
+    id: 'comment-tat-1',
+    projectId: 'demo-project-tattoo-noir',
+    conceptId: 'concept-tattoo-flash-1',
+    itemId: 'item-tattoo-flash',
+    authorType: 'client',
+    authorName: '한소희 고객님',
+    content: '뱀의 곡선과 장미 꽃잎이 얽힌 느낌이 너무 마음에 들어요! 전완근에 올렸을 때 손목 쪽 꽃봉오리 크기를 살짝만 줄일 수 있을까요?',
+    positionX: 53.5,
+    positionY: 42.0,
+    status: 'resolved',
+    createdAt: '2026-10-23T11:20:00Z',
+  },
+  {
+    id: 'comment-tat-2',
+    projectId: 'demo-project-tattoo-noir',
+    conceptId: 'concept-tattoo-flash-1',
+    itemId: 'item-tattoo-flash',
+    authorType: 'designer',
+    authorName: '타투이스트 로아',
+    content: '소희 님 안녕하세요! 좋은 피드백 감사합니다. 손목 뼈 굴곡에 걸리지 않도록 하단 꽃봉오리 직경을 15% 축소하고 줄기 곡률을 자연스럽게 보정했습니다.',
+    positionX: 53.5,
+    positionY: 42.0,
+    status: 'resolved',
+    createdAt: '2026-10-23T14:10:00Z',
+  },
+  {
+    id: 'comment-tat-3',
+    projectId: 'demo-project-tattoo-noir',
+    conceptId: 'concept-tattoo-placement-1',
+    itemId: 'item-tattoo-placement',
+    authorType: 'client',
+    authorName: '한소희 고객님',
+    content: '전완근 안쪽 배치가 생각했던 것보다 훨씬 잘 어울리네요. 13.5cm 크기로 진행하겠습니다!',
+    positionX: 50.0,
+    positionY: 55.0,
+    status: 'open',
+    createdAt: '2026-10-23T15:05:00Z',
+  },
+];
+
+export const INITIAL_TATTOO_REVISIONS: RevisionRequest[] = [
+  {
+    id: 'rev-req-tat-1',
+    projectId: 'demo-project-tattoo-noir',
+    revisionNumber: 1,
+    content: '1. 뱀 하단 꼬리 부분 장미 봉오리 크기 15% 축소\n2. 장미 잎사귀 도트 명암을 조금 더 은은하게 그라데이션 조정\n3. 전완근 안쪽 13.5cm 배치 스텐실 확정',
+    status: 'version_uploaded',
+    submittedAt: '2026-10-23T11:45:00Z',
+    completedAt: '2026-10-23T14:00:00Z',
+    createdAt: '2026-10-23T11:45:00Z',
+  },
+];
+
+export const INITIAL_TATTOO_SELECTIONS: Selection[] = [
+  {
+    id: 'sel-tat-1',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-flash',
+    conceptId: 'concept-tattoo-flash-1',
+    selectionType: 'candidate',
+    reason: '곡선이 유려하고 피부 톤에 가장 세련되게 어울림 (1순위 후보)',
+    isFinal: false,
+    selectedAt: '2026-10-23T11:15:00Z',
+  },
+  {
+    id: 'sel-tat-2',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-placement',
+    conceptId: 'concept-tattoo-placement-1',
+    selectionType: 'candidate',
+    reason: '전완근 안쪽 배치 및 13.5cm 비율이 손목 라인과 완벽히 일치 (1순위 후보)',
+    isFinal: false,
+    selectedAt: '2026-10-23T11:25:00Z',
+  },
+  {
+    id: 'sel-tat-3',
+    projectId: 'demo-project-tattoo-noir',
+    itemId: 'item-tattoo-care',
+    conceptId: 'concept-tattoo-care-1',
+    selectionType: 'candidate',
+    reason: '방수필름 및 1-14일 애프터케어 프로토콜 카드 저장 (1순위 후보)',
+    isFinal: false,
+    selectedAt: '2026-10-23T11:30:00Z',
+  },
+];
+
+export const INITIAL_TATTOO_ACTIVITY_LOGS: ActivityLog[] = [
+  {
+    id: 'log-tat-1',
+    projectId: 'demo-project-tattoo-noir',
+    activityType: 'page_view',
+    description: '의뢰인 한소희 님이 모바일 공유 링크로 도안 시안을 열람했습니다.',
+    createdAt: '2026-10-23T10:02:11Z',
+  },
+  {
+    id: 'log-tat-2',
+    projectId: 'demo-project-tattoo-noir',
+    activityType: 'concept_select',
+    description: '[메인 플래시 도안] 1순위로 "시안 1 — 보태니컬 뱀 & 와일드 로즈"을 확정했습니다.',
+    createdAt: '2026-10-23T11:15:00Z',
+  },
+  {
+    id: 'log-tat-3',
+    projectId: 'demo-project-tattoo-noir',
+    activityType: 'revision_submit',
+    description: '제1차 도안 디테일 수정 요청서가 제출되었습니다. (잔여 수정: 2회)',
+    createdAt: '2026-10-23T11:45:00Z',
+  },
+];
+
+export const INITIAL_TATTOO_ESTIMATE: ProjectEstimate = {
+  id: 'estimate-tattoo-noir-2026',
+  projectId: 'demo-project-tattoo-noir',
+  title: '커스텀 타투 아트워크 & 시술 견적서',
+  estimateNumber: 'TAT-202610-008',
+  issueDate: '2026-10-22',
+  validUntilDate: '2026-11-22',
+  senderName: '느와르 잉크 아틀리에 (NOIR INK ATELIER)',
+  senderRepresentative: '타투이스트 로아 (Roa)',
+  senderRegistrationNumber: '108-29-94812',
+  senderContact: '010-4491-8820',
+  senderEmail: 'noir.ink.atelier@gmail.com',
+  senderAddress: '서울특별시 용산구 이태원로 42길 18, 지하 1층 아틀리에',
+  senderBankAccount: '카카오뱅크 3333-08-948129 (예금주: 김로아)',
+  receiverCompany: '한소희 (개인 커스텀 의뢰)',
+  receiverRepresentative: '한소희 고객님',
+  receiverContact: '010-3819-7724',
+  receiverEmail: 'sohee.tattoo@gmail.com',
+  items: [
+    {
+      id: 'tat-item-1',
+      name: '1:1 맞춤 커스텀 타투 도안 창작 (디자인비)',
+      description: '의뢰인 스토리텔링 기반 오리지널 드로잉 3종 제안, 1인 1도안 영구 소장권 및 독점 보증서 발급',
+      quantity: 1,
+      unitPrice: 150000,
+      amount: 150000,
+      note: '선택 시안 확정 후 다른 고객에게 중복 시술 절대 불가',
+    },
+    {
+      id: 'tat-item-2',
+      name: '파인라인 블랙워크 타투 시술 (13.5cm x 6.8cm)',
+      description: '0803RL 극미세 니들 라인워크 및 3단계 다이내믹 그레이워시 도트워크 명암 작업 (소요 약 2시간 45분)',
+      quantity: 1,
+      unitPrice: 450000,
+      amount: 450000,
+      note: '시술 중 일회용 멸균 카트리지 및 의료용 피부 소독 포함',
+    },
+    {
+      id: 'tat-item-3',
+      name: '프리미엄 애프터케어 키트 & 3개월 리터치 보증',
+      description: '하이드로콜로이드 타투 전용 더마패치 3매, 비판텐 케어 연고 및 시술 후 3개월 이내 무상 리터치 1회권',
+      quantity: 1,
+      unitPrice: 50000,
+      amount: 50000,
+      note: '발색 완료 후 디테일 보강 리터치 1회 무료',
+    },
+  ],
+  subtotal: 650000,
+  vatRate: 10,
+  vatAmount: 65000,
+  totalAmount: 715000,
+  termsAndNotes: '1. 예약 확정 시 예약금 30%(210,000원) 입금 확인 후 시술 일정이 최종 픽스됩니다.\n2. 잔금은 시술 당일 작업 완료 후 결제됩니다.\n3. 시술 전날 과음 및 당일 아스피린 복용은 출혈을 유발하므로 금지됩니다.\n4. 시안 피드백 핀포인트를 통해 도안의 세부 라인 및 배치 수정을 요청하실 수 있습니다.',
+  createdAt: '2026-10-22T10:00:00Z',
+  updatedAt: '2026-10-22T10:00:00Z',
+};
+
+export const INITIAL_TATTOO_PROJECT: Project = {
+  id: 'demo-project-tattoo-noir',
+  companyId: 'company-tattoo-client',
+  companyName: '한소희 (커스텀 타투 의뢰)',
+  companyLogoUrl: NOIR_INK_LOGO_SVG,
+  ownerId: 'demo-designer-id',
+  title: '느와르 잉크 — 커스텀 블랙워크 & 파인라인 타투 도안',
+  clientName: '한소희 고객님',
+  clientEmail: 'sohee.tattoo@gmail.com',
+  description: '1:1 맞춤 커스텀 오더로 제작된 블랙워크 & 파인라인 플래시 도안, 신체 부위별 가상 착색 목업, 그리고 애프터케어 가이드 통합 시안 프로젝트입니다.',
+  status: 'revising',
+  dueDate: '2026-11-15',
+  maxRevisionCount: 9,
+  usedRevisionCount: 1,
+  feedbackTokensTotal: 15,
+  feedbackTokensUsed: 2,
+  maxSelectionCount: 3,
+  shareToken: 'tattoo-noir-sample',
+  sharePasswordHash: undefined,
+  watermarkEnabled: false,
+  downloadEnabled: true,
+  worldcupEnabled: false,
+  createdAt: '2026-10-22T10:00:00Z',
+  updatedAt: '2026-10-23T15:30:00Z',
+  estimate: INITIAL_TATTOO_ESTIMATE,
+  designItems: INITIAL_TATTOO_DESIGN_ITEMS,
+  concepts: INITIAL_TATTOO_CONCEPTS,
+  comments: INITIAL_TATTOO_COMMENTS,
+  revisionRequests: INITIAL_TATTOO_REVISIONS,
+  selections: INITIAL_TATTOO_SELECTIONS,
+  activityLogs: INITIAL_TATTOO_ACTIVITY_LOGS,
+};
+
+export const INITIAL_DEMO_PROJECTS: Project[] = [
+  INITIAL_DEMO_PROJECT,
+  INITIAL_TATTOO_PROJECT,
+];

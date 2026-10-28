@@ -117,6 +117,26 @@ export default function HomePage() {
           </button>
         </div>
 
+        {/* Sample Direct Previews */}
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-500">
+          <span className="text-[11px] font-medium text-zinc-400">분야별 샘플 체험:</span>
+          <Link
+            href="/share/urbanforest-sample-2026"
+            target="_blank"
+            className="hover:text-zinc-900 underline underline-offset-4 decoration-zinc-300 transition-colors"
+          >
+            브랜드 아이덴티티 &amp; 패키지
+          </Link>
+          <span className="text-zinc-300">·</span>
+          <Link
+            href="/share/tattoo-noir-sample"
+            target="_blank"
+            className="hover:text-zinc-900 underline underline-offset-4 decoration-zinc-400 transition-colors font-medium text-zinc-800 bg-zinc-100/80 px-2 py-0.5 rounded-sm"
+          >
+            타투이스트 커스텀 도안 &amp; 신체 목업
+          </Link>
+        </div>
+
         {/* Value Prop Chips */}
         <div className="mt-14 pt-10 border-t border-zinc-200/60 max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
           <div className="p-3.5 bg-white border border-zinc-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">

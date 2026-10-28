@@ -15,7 +15,7 @@ import {
   ProjectEstimate,
   StudioProfile,
 } from '@/types';
-import { INITIAL_DEMO_PROJECT, INITIAL_COMPANIES, INITIAL_CONCEPTS, INITIAL_ESTIMATE, INITIAL_STUDIO_PROFILE } from '@/lib/demo/sample-data';
+import { INITIAL_DEMO_PROJECT, INITIAL_TATTOO_PROJECT, INITIAL_COMPANIES, INITIAL_CONCEPTS, INITIAL_ESTIMATE, INITIAL_STUDIO_PROFILE } from '@/lib/demo/sample-data';
 import { generateUrbanForestSvg } from '@/lib/utils/svg-generator';
 
 const STORAGE_KEY = 'sianpick_projects_store_v8';
@@ -179,14 +179,14 @@ export class DemoProjectRepository implements IProjectRepository {
           window.localStorage.getItem(STORAGE_KEY_V3) ||
           window.localStorage.getItem(STORAGE_KEY_V2) ||
           window.localStorage.getItem(STORAGE_KEY_V1);
-        let projects: Project[] = [INITIAL_DEMO_PROJECT];
+        let projects: Project[] = [INITIAL_DEMO_PROJECT, INITIAL_TATTOO_PROJECT];
         if (prevRaw) {
           try {
             const list: Project[] = JSON.parse(prevRaw);
             const userCustomProjects = list.filter(
-              (p) => p.id !== 'demo-project-lumiere' && p.id !== 'demo-project-urbanforest' && p.id !== 'demo-project-runofthemill'
+              (p) => p.id !== 'demo-project-lumiere' && p.id !== 'demo-project-urbanforest' && p.id !== 'demo-project-runofthemill' && p.id !== 'demo-project-tattoo-noir'
             );
-            projects = [INITIAL_DEMO_PROJECT, ...userCustomProjects];
+            projects = [INITIAL_DEMO_PROJECT, INITIAL_TATTOO_PROJECT, ...userCustomProjects];
           } catch {
             // ignore
           }
@@ -225,13 +225,21 @@ export class DemoProjectRepository implements IProjectRepository {
         return p;
       });
 
-      // Ensure INITIAL_DEMO_PROJECT is present or updated if needed in demo mode
+      // Ensure INITIAL_DEMO_PROJECT and INITIAL_TATTOO_PROJECT are present or updated in demo mode
       if (currentKey === STORAGE_KEY) {
         const hasUrbanForest = projects.some(
           (p) => p.id === 'demo-project-urbanforest' || p.title.includes('어반 포레스트')
         );
         if (!hasUrbanForest) {
           projects.unshift(INITIAL_DEMO_PROJECT);
+          modified = true;
+        }
+
+        const hasTattooProject = projects.some(
+          (p) => p.id === 'demo-project-tattoo-noir' || p.title.includes('느와르 잉크')
+        );
+        if (!hasTattooProject) {
+          projects.push(INITIAL_TATTOO_PROJECT);
           modified = true;
         }
       }
@@ -330,6 +338,13 @@ export class DemoProjectRepository implements IProjectRepository {
         const merged = [...INITIAL_COMPANIES, ...list.filter((c) => c.id !== 'company-lumiere' && c.id !== 'company-runofthemill')];
         window.localStorage.setItem(currentKey, JSON.stringify(merged));
         return merged;
+      }
+      if (currentKey === COMPANIES_KEY && !list.some((c) => c.id === 'company-tattoo-client')) {
+        const tattooComp = INITIAL_COMPANIES.find((c) => c.id === 'company-tattoo-client');
+        if (tattooComp) {
+          list.push(tattooComp);
+          compModified = true;
+        }
       }
       if (compModified) {
         window.localStorage.setItem(currentKey, JSON.stringify(list));
@@ -439,6 +454,9 @@ export class DemoProjectRepository implements IProjectRepository {
         }
       } catch {}
     }
+    if (!proj && id === 'demo-project-tattoo-noir') {
+      proj = projects.find((p) => p.id === 'demo-project-tattoo-noir') || INITIAL_TATTOO_PROJECT;
+    }
     if (!proj && (id === 'demo-project-urbanforest' || id === 'sample-urban-roasters' || id === 'demo-project-lumiere' || id === 'demo-project-runofthemill')) {
       proj = projects.find((p) => p.id === 'demo-project-urbanforest' || p.id === 'demo-project-runofthemill' || p.title.includes('어반 포레스트') || p.title.includes('런오브더밀')) || projects[0] || null;
     }
@@ -465,6 +483,9 @@ export class DemoProjectRepository implements IProjectRepository {
           }
         }
       } catch {}
+    }
+    if (!proj && token === 'tattoo-noir-sample') {
+      proj = projects.find((p) => p.shareToken === 'tattoo-noir-sample') || INITIAL_TATTOO_PROJECT;
     }
     if (!proj && (token === 'urbanforest-sample-2026' || token === 'runofthemill-sample-2026' || token === 'lumiere-sample-2026' || token === 'share-urban-sample-01')) {
       proj = projects.find((p) => p.id === 'demo-project-urbanforest' || p.id === 'demo-project-runofthemill' || p.title.includes('어반 포레스트') || p.title.includes('런오브더밀')) || projects[0] || null;

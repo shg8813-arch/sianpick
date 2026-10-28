@@ -37,10 +37,12 @@
 
 - **메인 랜딩 페이지**: `http://localhost:3000/`
 - **디자이너 관리자 대시보드 (업체 관리 & 프로젝트 목록)**: `http://localhost:3000/dashboard`
-- **어반 포레스트 프로젝트 상세 (디자인 항목 & 시안 관리)**: `http://localhost:3000/dashboard/projects/demo-project-urbanforest`
-- **고객 전용 공유 화면**: `http://localhost:3000/share/urbanforest-sample-2026`
-- **고객 선택시안 모아보기**: `http://localhost:3000/share/urbanforest-sample-2026/summary`
-- **고객 견적서 확인**: `http://localhost:3000/share/urbanforest-sample-2026/estimate`
+- **어반 포레스트 프로젝트 상세 (브랜딩/패키지)**: `http://localhost:3000/dashboard/projects/demo-project-urbanforest`
+- **어반 포레스트 고객 전용 공유 화면**: `http://localhost:3000/share/urbanforest-sample-2026`
+- **느와르 잉크 아틀리에 (타투이스트 전문 샘플)**: `http://localhost:3000/dashboard/projects/demo-project-tattoo-noir`
+- **타투 고객 전용 도안 공유 화면**: `http://localhost:3000/share/tattoo-noir-sample`
+- **타투 고객 선택 도안 모아보기**: `http://localhost:3000/share/tattoo-noir-sample/summary`
+- **타투 시술 견적서 확인**: `http://localhost:3000/share/tattoo-noir-sample/estimate`
 
 ---
 
