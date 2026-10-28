@@ -1,19 +1,19 @@
 import { Project, Concept, PinComment, RevisionRequest, ActivityLog, Selection, Company, DesignItem, ProjectEstimate, StudioProfile } from '@/types';
-import { generateRunOfTheMillSvg } from '@/lib/utils/svg-generator';
+import { generateUrbanForestSvg } from '@/lib/utils/svg-generator';
 
-const svgLogo1 = generateRunOfTheMillSvg('logo-1', '로고', '시안 1');
-const svgLogo2 = generateRunOfTheMillSvg('logo-2', '로고', '시안 2');
-const svgLogo3 = generateRunOfTheMillSvg('logo-3', '로고', '시안 3');
+const svgLogo1 = generateUrbanForestSvg('logo-1', '로고', '시안 1');
+const svgLogo2 = generateUrbanForestSvg('logo-2', '로고', '시안 2');
+const svgLogo3 = generateUrbanForestSvg('logo-3', '로고', '시안 3');
 
-const svgCup1 = generateRunOfTheMillSvg('cup-1', '컵홀더', '시안 1');
-const svgCup2 = generateRunOfTheMillSvg('cup-2', '컵홀더', '시안 2');
-const svgCup3 = generateRunOfTheMillSvg('cup-3', '컵홀더', '시안 3');
+const svgCup1 = generateUrbanForestSvg('cup-1', '친환경 패키지', '시안 1');
+const svgCup2 = generateUrbanForestSvg('cup-2', '친환경 패키지', '시안 2');
+const svgCup3 = generateUrbanForestSvg('cup-3', '친환경 패키지', '시안 3');
 
-const svgMenu1 = generateRunOfTheMillSvg('menu-1', '메뉴판', '시안 1');
-const svgMenu2 = generateRunOfTheMillSvg('menu-2', '메뉴판', '시안 2');
-const svgMenu3 = generateRunOfTheMillSvg('menu-3', '메뉴판', '시안 3');
+const svgMenu1 = generateUrbanForestSvg('menu-1', '쇼룸 메뉴판', '시안 1');
+const svgMenu2 = generateUrbanForestSvg('menu-2', '쇼룸 메뉴판', '시안 2');
+const svgMenu3 = generateUrbanForestSvg('menu-3', '쇼룸 메뉴판', '시안 3');
 
-export const RUNOFTHEMILL_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 44" fill="none"><rect width="220" height="44" fill="%2309090b" rx="2"/><text x="18" y="27" fill="%23ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="13" letter-spacing="4">RUN OF THE MILL</text></svg>`;
+export const URBANFOREST_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 44" fill="none"><rect width="220" height="44" fill="%2309090b" rx="2"/><text x="18" y="27" fill="%23ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="13" letter-spacing="4">URBAN FOREST</text></svg>`;
 
 export const STUDIO_ATELIER_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 38" fill="none"><text x="2" y="25" fill="%2318181b" font-family="'Pretendard', system-ui, -apple-system, sans-serif" font-weight="900" font-size="16" letter-spacing="3.5">STUDIO ATELIER</text><circle cx="218" cy="14" r="3" fill="%2318181b"/></svg>`;
 
@@ -32,12 +32,12 @@ export const INITIAL_STUDIO_PROFILE: StudioProfile = {
 
 export const INITIAL_COMPANIES: Company[] = [
   {
-    id: 'company-runofthemill',
-    name: '런오브더밀',
-    contactPerson: '김밀 대표',
-    email: 'client@runofthemill.kr',
-    phone: '010-9281-3401',
-    memo: '스페셜티 로스터리 & 라이프스타일 브랜드 런오브더밀(Run of the Mill) 통합 아이덴티티 및 패키징 리뉴얼',
+    id: 'company-urbanforest',
+    name: '어반 포레스트',
+    contactPerson: '김민준 대표',
+    email: 'client@urbanforest.design',
+    phone: '010-8421-5502',
+    memo: '친환경 라이프스타일 브랜드 어반 포레스트(URBAN FOREST) 통합 아이덴티티 및 패키징 리뉴얼',
     createdAt: '2026-10-15T09:00:00Z',
     updatedAt: '2026-10-18T08:00:00Z',
   },
@@ -55,8 +55,8 @@ export const INITIAL_COMPANIES: Company[] = [
 
 export const INITIAL_DESIGN_ITEMS: DesignItem[] = [
   {
-    id: 'item-run-logo',
-    projectId: 'demo-project-runofthemill',
+    id: 'item-urban-logo',
+    projectId: 'demo-project-urbanforest',
     name: '로고',
     description: '브랜드 메인 아이덴티티 심볼 및 워드마크',
     displayOrder: 1,
@@ -64,19 +64,19 @@ export const INITIAL_DESIGN_ITEMS: DesignItem[] = [
     createdAt: '2026-10-18T08:30:00Z',
   },
   {
-    id: 'item-run-cupholder',
-    projectId: 'demo-project-runofthemill',
-    name: '컵홀더',
-    description: '13oz/16oz 테이크아웃 종이 슬리브 인쇄 그래픽',
+    id: 'item-urban-package',
+    projectId: 'demo-project-urbanforest',
+    name: '친환경 패키지',
+    description: '13oz/16oz 테이크아웃 종이 슬리브 및 패키징 그래픽',
     displayOrder: 2,
     worldcupEnabled: false,
     createdAt: '2026-10-18T08:35:00Z',
   },
   {
-    id: 'item-run-menu',
-    projectId: 'demo-project-runofthemill',
-    name: '메뉴판',
-    description: '카운터 탑 아크릴 스탠드용 메뉴보드',
+    id: 'item-urban-menu',
+    projectId: 'demo-project-urbanforest',
+    name: '쇼룸 메뉴판',
+    description: '카운터 탑 아크릴 스탠드용 쇼룸 메뉴보드',
     displayOrder: 3,
     worldcupEnabled: false,
     createdAt: '2026-10-18T08:40:00Z',
@@ -86,12 +86,12 @@ export const INITIAL_DESIGN_ITEMS: DesignItem[] = [
 export const INITIAL_CONCEPTS: Concept[] = [
   // Item 1: 로고 (3 concepts)
   {
-    id: 'concept-run-logo-1',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-logo',
+    id: 'concept-urban-logo-1',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-logo',
     title: '시안 1 — 모던 지오메트릭 워드마크',
-    description: '런오브더밀의 절제된 미학을 기하학적 볼드 산세리프와 단단한 심볼로 표현한 모던 워드마크입니다.',
-    designConcept: '기하학적 원형 휠과 중앙 큐브 심볼을 통해 현대적인 커피 랩과 정밀한 로스팅 프로세스를 상징화했습니다.',
+    description: '어반 포레스트의 절제된 자연 미학을 기하학적 볼드 산세리프와 단단한 심볼로 표현한 모던 워드마크입니다.',
+    designConcept: '자연과 도심의 공존을 상징하는 지오메트릭 심볼을 통해 현대적인 라이프스타일 감각을 표현했습니다.',
     colorFontDescription: '옵시디언 블랙(#09090B), 클린 화이트(#FFFFFF) / 서체: Geometric Sans Heavy',
     usageRecommendation: '플래그십 간판, 쇼핑백, 파사드 알루미늄 사이니지, 디지털 앱 아이콘',
     thumbnailUrl: svgLogo1,
@@ -101,8 +101,8 @@ export const INITIAL_CONCEPTS: Concept[] = [
     updatedAt: '2026-10-18T09:00:00Z',
     versions: [
       {
-        id: 'ver-run-logo-1',
-        conceptId: 'concept-run-logo-1',
+        id: 'ver-urban-logo-1',
+        conceptId: 'concept-urban-logo-1',
         versionNumber: 1,
         imageUrl: svgLogo1,
         changeSummary: '모던 지오메트릭 워드마크 제안본',
@@ -112,14 +112,14 @@ export const INITIAL_CONCEPTS: Concept[] = [
     ],
   },
   {
-    id: 'concept-run-logo-2',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-logo',
+    id: 'concept-urban-logo-2',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-logo',
     title: '시안 2 — 헤리티지 세리프 모노그램',
-    description: '전통 방앗간(Mill)의 기계적 휠과 클래식 세리프 활자의 우아함을 결합한 헤리티지 모노그램 시안입니다.',
-    designConcept: 'R·M 모노그램 이니셜과 정교한 타원 프레임으로 아티잔 로스터리의 장인 정신과 신뢰감을 강조했습니다.',
+    description: '자연의 유려한 유기적 곡선과 클래식 세리프 활자의 우아함을 결합한 헤리티지 모노그램 시안입니다.',
+    designConcept: 'U·F 모노그램 이니셜과 정교한 타원 프레임으로 아티잔 스튜디오의 장인 정신과 신뢰감을 강조했습니다.',
     colorFontDescription: '딥 에스프레소(#1C1917), 앤틱 크림(#F5F5F0) / 서체: Cormorant Garamond & Didot',
-    usageRecommendation: '원두 패키지 봉투 라벨, 금박/압인 명함, 바리스타 에이프런 자수',
+    usageRecommendation: '패키지 봉투 라벨, 금박/압인 명함, 쇼룸 패브릭 자수',
     thumbnailUrl: svgLogo2,
     displayOrder: 2,
     isPublic: true,
@@ -127,8 +127,8 @@ export const INITIAL_CONCEPTS: Concept[] = [
     updatedAt: '2026-10-20T14:00:00Z',
     versions: [
       {
-        id: 'ver-run-logo-2-1',
-        conceptId: 'concept-run-logo-2',
+        id: 'ver-urban-logo-2-1',
+        conceptId: 'concept-urban-logo-2',
         versionNumber: 1,
         imageUrl: svgLogo2,
         changeSummary: '헤리티지 모노그램 초기 제안본',
@@ -138,12 +138,12 @@ export const INITIAL_CONCEPTS: Concept[] = [
     ],
   },
   {
-    id: 'concept-run-logo-3',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-logo',
+    id: 'concept-urban-logo-3',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-logo',
     title: '시안 3 — 네오 브루탈리즘 에디토리얼',
     description: '독창적인 타이포그래피 비율과 스트리트 에디토리얼 감성을 가미한 컨템포러리 비주얼 시안입니다.',
-    designConcept: '볼드한 블랙 블록과 코발트 블루 포인트 태그로 MZ 세대에게 강렬한 인상을 남기는 스트리트 무드를 담았습니다.',
+    designConcept: '볼드한 블랙 블록과 코발트 블루 포인트 태그로 감각적인 인상을 남기는 스트리트 무드를 담았습니다.',
     colorFontDescription: '모노크롬 잉크(#000000), 일렉트릭 블루 악센트(#2563EB) / 서체: Neue Haas Grotesk',
     usageRecommendation: '매거진 룩북, 티셔츠 굿즈, 감각적인 브랜드 포스터',
     thumbnailUrl: svgLogo3,
@@ -153,8 +153,8 @@ export const INITIAL_CONCEPTS: Concept[] = [
     updatedAt: '2026-10-18T10:00:00Z',
     versions: [
       {
-        id: 'ver-run-logo-3-1',
-        conceptId: 'concept-run-logo-3',
+        id: 'ver-urban-logo-3-1',
+        conceptId: 'concept-urban-logo-3',
         versionNumber: 1,
         imageUrl: svgLogo3,
         changeSummary: '네오 브루탈리즘 에디토리얼 초기안',
@@ -164,13 +164,13 @@ export const INITIAL_CONCEPTS: Concept[] = [
     ],
   },
 
-  // Item 2: 컵홀더 (3 concepts)
+  // Item 2: 친환경 패키지 (3 concepts)
   {
-    id: 'concept-run-cup-1',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-cupholder',
-    title: '시안 1 — 크라프트 2도 빈티지 슬리브',
-    description: '친환경 미표백 크라프트지에 2도 옵셋 인쇄로 방앗간(Mill) 심볼 스탬프를 정교하게 찍어낸 슬리브입니다.',
+    id: 'concept-urban-cup-1',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-package',
+    title: '시안 1 — 크라프트 2도 빈티지 패키지',
+    description: '친환경 미표백 크라프트지에 2도 옵셋 인쇄로 어반 포레스트 심볼 스탬프를 정교하게 찍어낸 패키지입니다.',
     designConcept: '아날로그 도장 스탬프와 브릭 레드 컬러로 따스한 휴식과 클래식한 테이크아웃 무드를 연출했습니다.',
     colorFontDescription: '차콜 잉크(#18181B), 브릭 레드(#8E2818) / 인쇄: 친환경 크라프트 합지 350g',
     usageRecommendation: '핫/아이스 겸용 13oz 테이크아웃 컵 슬리브, 코스터',
@@ -181,8 +181,8 @@ export const INITIAL_CONCEPTS: Concept[] = [
     updatedAt: '2026-10-18T10:30:00Z',
     versions: [
       {
-        id: 'ver-run-cup-1-1',
-        conceptId: 'concept-run-cup-1',
+        id: 'ver-urban-cup-1-1',
+        conceptId: 'concept-urban-cup-1',
         versionNumber: 1,
         imageUrl: svgCup1,
         changeSummary: '크라프트 슬리브 초기안',
@@ -192,14 +192,14 @@ export const INITIAL_CONCEPTS: Concept[] = [
     ],
   },
   {
-    id: 'concept-run-cup-2',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-cupholder',
+    id: 'concept-urban-cup-2',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-package',
     title: '시안 2 — 모던 그리드 타이포 에어홀더',
     description: '타이포그래피를 규칙적인 그리드 선에 배치하여 건축적이고 정갈한 매장 분위기를 손끝에서 전달합니다.',
     designConcept: '스위스 인터내셔널 스타일 그리드 분할과 매트 블랙 바탕의 볼드 타이포로 시각적 신선함을 줍니다.',
     colorFontDescription: '매트 블랙(#18181B), 코발트 블루(#2563EB) / 인쇄: 무광 코팅지 엠보싱',
-    usageRecommendation: '16oz 라지 컵 에어홀더, 드립백 박스 패키지 슬리브',
+    usageRecommendation: '16oz 라지 컵 에어홀더, 친환경 박스 패키지 슬리브',
     thumbnailUrl: svgCup2,
     displayOrder: 2,
     isPublic: true,
@@ -207,8 +207,8 @@ export const INITIAL_CONCEPTS: Concept[] = [
     updatedAt: '2026-10-18T11:00:00Z',
     versions: [
       {
-        id: 'ver-run-cup-2-1',
-        conceptId: 'concept-run-cup-2',
+        id: 'ver-urban-cup-2-1',
+        conceptId: 'concept-urban-cup-2',
         versionNumber: 1,
         imageUrl: svgCup2,
         changeSummary: '그리드 에어홀더 초기안',
@@ -218,14 +218,14 @@ export const INITIAL_CONCEPTS: Concept[] = [
     ],
   },
   {
-    id: 'concept-run-cup-3',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-cupholder',
+    id: 'concept-urban-cup-3',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-package',
     title: '시안 3 — 미니멀 라인 아키텍처 슬리브',
-    description: '수평적 분할선과 정제된 활자 레이아웃으로 미니멀 갤러리 도록과 같은 세련됨을 구현한 슬리브입니다.',
-    designConcept: '군더더기를 걷어내고 중앙 수평 라인과 절제된 폰트로 모던한 인테리어와 하나가 되도록 설계했습니다.',
+    description: '수평적 분할선과 정제된 활자 레이아웃으로 미니멀 갤러리 도록과 같은 세련됨을 구현한 패키지 슬리브입니다.',
+    designConcept: '군더더기를 걷어내고 중앙 수평 라인과 절제된 폰트로 모던한 쇼룸 인테리어와 하나가 되도록 설계했습니다.',
     colorFontDescription: '아키텍처 그레이(#F4F4F5), 딥 블랙(#18181B) / 인쇄: 텍스처 보드 1도 흑색',
-    usageRecommendation: '시그니처 플랫화이트 전용 슬리브, 테이크아웃 캐리어 띠지',
+    usageRecommendation: '시그니처 음료 전용 슬리브, 테이크아웃 캐리어 띠지',
     thumbnailUrl: svgCup3,
     displayOrder: 3,
     isPublic: true,
@@ -233,8 +233,8 @@ export const INITIAL_CONCEPTS: Concept[] = [
     updatedAt: '2026-10-18T11:30:00Z',
     versions: [
       {
-        id: 'ver-run-cup-3-1',
-        conceptId: 'concept-run-cup-3',
+        id: 'ver-urban-cup-3-1',
+        conceptId: 'concept-urban-cup-3',
         versionNumber: 1,
         imageUrl: svgCup3,
         changeSummary: '미니멀 라인 슬리브 초기안',
@@ -244,14 +244,14 @@ export const INITIAL_CONCEPTS: Concept[] = [
     ],
   },
 
-  // Item 3: 메뉴판 (3 concepts)
+  // Item 3: 쇼룸 메뉴판 (3 concepts)
   {
-    id: 'concept-run-menu-1',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-menu',
+    id: 'concept-urban-menu-1',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-menu',
     title: '시안 1 — 클리어 아크릴 스탠드 보드',
     description: '투명 아크릴과 화이트 패널 사이에 인쇄물을 거치하는 형태로, 여백이 시원하게 살아있는 메뉴판입니다.',
-    designConcept: '시각적 피로도를 덜어내고 에스프레소 및 시그니처 메뉴에 시선이 직관적으로 닿도록 타이포를 분할했습니다.',
+    designConcept: '시각적 피로도를 덜어내고 시그니처 아이템에 시선이 직관적으로 닿도록 타이포를 분할했습니다.',
     colorFontDescription: '퓨어 화이트(#FFFFFF), 제트 블랙(#09090B) / 서체: Pretendard High-Readability',
     usageRecommendation: '메인 카운터 A4 아크릴 스탠드 디스플레이',
     thumbnailUrl: svgMenu1,
@@ -261,8 +261,8 @@ export const INITIAL_CONCEPTS: Concept[] = [
     updatedAt: '2026-10-18T12:00:00Z',
     versions: [
       {
-        id: 'ver-run-menu-1-1',
-        conceptId: 'concept-run-menu-1',
+        id: 'ver-urban-menu-1-1',
+        conceptId: 'concept-urban-menu-1',
         versionNumber: 1,
         imageUrl: svgMenu1,
         changeSummary: '클리어 아크릴 메뉴판 초기안',
@@ -272,14 +272,14 @@ export const INITIAL_CONCEPTS: Concept[] = [
     ],
   },
   {
-    id: 'concept-run-menu-2',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-menu',
-    title: '시안 2 — 에디토리얼 그리드 매거진 메뉴',
-    description: '커피 품종별 산미, 바디, 가공 방식(Washed/Natural)을 매거진 인덱스 형식으로 구성한 시안입니다.',
-    designConcept: '좌우 2단 분할 구조로 좌측에는 스페셜티 큐레이션 노트, 우측에는 음료와 디저트를 단정히 정렬했습니다.',
+    id: 'concept-urban-menu-2',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-menu',
+    title: '시안 2 — 에디토리얼 그리드 카탈로그 메뉴',
+    description: '라이프스타일 제품 라인업과 친환경 가치를 매거진 인덱스 형식으로 구성한 시안입니다.',
+    designConcept: '좌우 2단 분할 구조로 좌측에는 브랜드 큐레이션 노트, 우측에는 시그니처 아이템을 단정히 정렬했습니다.',
     colorFontDescription: '웜 오프화이트(#FBFBF9), 슬레이트 잉크(#18181B) / 서체: Serif Editorial & Sans Body',
-    usageRecommendation: '브루잉 바 전용 A3 와이드 메뉴판, 고객 배포용 엽서 메뉴',
+    usageRecommendation: '쇼룸 바 전용 A3 와이드 메뉴판, 고객 배포용 리플렛 메뉴',
     thumbnailUrl: svgMenu2,
     displayOrder: 2,
     isPublic: true,
@@ -287,8 +287,8 @@ export const INITIAL_CONCEPTS: Concept[] = [
     updatedAt: '2026-10-18T12:30:00Z',
     versions: [
       {
-        id: 'ver-run-menu-2-1',
-        conceptId: 'concept-run-menu-2',
+        id: 'ver-urban-menu-2-1',
+        conceptId: 'concept-urban-menu-2',
         versionNumber: 1,
         imageUrl: svgMenu2,
         changeSummary: '매거진 그리드 메뉴판 초기안',
@@ -298,14 +298,14 @@ export const INITIAL_CONCEPTS: Concept[] = [
     ],
   },
   {
-    id: 'concept-run-menu-3',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-menu',
+    id: 'concept-urban-menu-3',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-menu',
     title: '시안 3 — 모던 모노크롬 카운터 디스플레이',
     description: '흑백의 명료한 대비와 볼드한 카테고리 헤더로 주문 동선과 시선 흐름을 최적화한 현대적인 메뉴판입니다.',
-    designConcept: '어두운 카운터 조명에서도 텍스트가 선명하게 인지되도록 고대비 모노크롬 2-섹션 카드로 설계했습니다.',
+    designConcept: '쇼룸 조명에서도 텍스트가 선명하게 인지되도록 고대비 모노크롬 2-섹션 카드로 설계했습니다.',
     colorFontDescription: '헤비 블랙(#09090B), 스틸 그레이(#E4E4E7) / 인쇄: 무광 알루미늄 패널 복합 인쇄',
-    usageRecommendation: '에스프레소 머신 측면 사이니지, 벽면 거치형 메뉴보드',
+    usageRecommendation: '카운터 측면 사이니지, 벽면 거치형 메뉴보드',
     thumbnailUrl: svgMenu3,
     displayOrder: 3,
     isPublic: true,
@@ -313,8 +313,8 @@ export const INITIAL_CONCEPTS: Concept[] = [
     updatedAt: '2026-10-18T13:00:00Z',
     versions: [
       {
-        id: 'ver-run-menu-3-1',
-        conceptId: 'concept-run-menu-3',
+        id: 'ver-urban-menu-3-1',
+        conceptId: 'concept-urban-menu-3',
         versionNumber: 1,
         imageUrl: svgMenu3,
         changeSummary: '모노크롬 카운터 보드 초기안',
@@ -328,12 +328,12 @@ export const INITIAL_CONCEPTS: Concept[] = [
 export const INITIAL_COMMENTS: PinComment[] = [
   {
     id: 'comment-1',
-    projectId: 'demo-project-runofthemill',
-    conceptId: 'concept-run-logo-1',
-    itemId: 'item-run-logo',
+    projectId: 'demo-project-urbanforest',
+    conceptId: 'concept-urban-logo-1',
+    itemId: 'item-urban-logo',
     authorType: 'client',
-    authorName: '김밀 대표',
-    content: '심볼 형태가 직관적이어서 마음에 들어요. 중앙 심볼의 곡선이 컵에 인쇄되었을 때 좀 더 선명하게 보이면 좋겠습니다.',
+    authorName: '김민준 대표',
+    content: '심볼 형태가 직관적이어서 마음에 들어요. 중앙 심볼의 곡선이 패키지에 인쇄되었을 때 좀 더 선명하게 보이면 좋겠습니다.',
     positionX: 50.2,
     positionY: 38.5,
     status: 'resolved',
@@ -341,11 +341,11 @@ export const INITIAL_COMMENTS: PinComment[] = [
   },
   {
     id: 'comment-2',
-    projectId: 'demo-project-runofthemill',
-    conceptId: 'concept-run-logo-1',
-    itemId: 'item-run-logo',
+    projectId: 'demo-project-urbanforest',
+    conceptId: 'concept-urban-logo-1',
+    itemId: 'item-urban-logo',
     authorType: 'designer',
-    authorName: '스튜디오 아뜰리에',
+    authorName: '스튜디오 아틀리에',
     content: '의견 감사드립니다! v2 수정본에서 인쇄 시 뭉침 현상이 없도록 외곽선 굵기와 곡률을 보정했습니다.',
     positionX: 50.2,
     positionY: 38.5,
@@ -354,12 +354,12 @@ export const INITIAL_COMMENTS: PinComment[] = [
   },
   {
     id: 'comment-3',
-    projectId: 'demo-project-runofthemill',
-    conceptId: 'concept-run-cup-1',
-    itemId: 'item-run-cupholder',
+    projectId: 'demo-project-urbanforest',
+    conceptId: 'concept-urban-cup-1',
+    itemId: 'item-urban-package',
     authorType: 'client',
-    authorName: '김밀 대표',
-    content: '빈티지한 무드가 저희 매장 인테리어와 아주 잘 어울립니다!',
+    authorName: '김민준 대표',
+    content: '자연 친화적인 무드가 저희 쇼룸 인테리어와 아주 잘 어울립니다!',
     positionX: 49.8,
     positionY: 52.0,
     status: 'open',
@@ -370,9 +370,9 @@ export const INITIAL_COMMENTS: PinComment[] = [
 export const INITIAL_REVISIONS: RevisionRequest[] = [
   {
     id: 'rev-req-1',
-    projectId: 'demo-project-runofthemill',
+    projectId: 'demo-project-urbanforest',
     revisionNumber: 1,
-    content: '1. 로고 시안 1의 심볼 외곽 곡률 부드럽게 조정\n2. 로고 하단 서체 자간(Letter spacing) 살짝 확장\n3. 컵홀더 시안 1의 인쇄 색상 대비 조정',
+    content: '1. 로고 시안 1의 심볼 외곽 곡률 부드럽게 조정\n2. 로고 하단 서체 자간(Letter spacing) 살짝 확장\n3. 패키지 시안 1의 인쇄 색상 대비 조정',
     status: 'version_uploaded',
     submittedAt: '2026-10-19T11:45:00Z',
     completedAt: '2026-10-20T14:00:00Z',
@@ -383,9 +383,9 @@ export const INITIAL_REVISIONS: RevisionRequest[] = [
 export const INITIAL_SELECTIONS: Selection[] = [
   {
     id: 'sel-1',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-logo',
-    conceptId: 'concept-run-logo-1',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-logo',
+    conceptId: 'concept-urban-logo-1',
     selectionType: 'candidate',
     reason: '심플하면서도 브랜딩 확장에 가장 유리하다고 판단됨 (드래그앤드롭 1순위)',
     isFinal: false,
@@ -393,19 +393,19 @@ export const INITIAL_SELECTIONS: Selection[] = [
   },
   {
     id: 'sel-2',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-cupholder',
-    conceptId: 'concept-run-cup-1',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-package',
+    conceptId: 'concept-urban-cup-1',
     selectionType: 'candidate',
-    reason: '크라프트지와 매장 인테리어 톤앤매너에 최적 (드래그앤드롭 1순위)',
+    reason: '크라프트지와 쇼룸 인테리어 톤앤매너에 최적 (드래그앤드롭 1순위)',
     isFinal: false,
     selectedAt: '2026-10-19T11:25:00Z',
   },
   {
     id: 'sel-3',
-    projectId: 'demo-project-runofthemill',
-    itemId: 'item-run-menu',
-    conceptId: 'concept-run-menu-1',
+    projectId: 'demo-project-urbanforest',
+    itemId: 'item-urban-menu',
+    conceptId: 'concept-urban-menu-1',
     selectionType: 'candidate',
     reason: '카운터에서 손님들이 한눈에 메뉴를 파악하기 편함 (드래그앤드롭 1순위)',
     isFinal: false,
@@ -416,21 +416,21 @@ export const INITIAL_SELECTIONS: Selection[] = [
 export const INITIAL_ACTIVITY_LOGS: ActivityLog[] = [
   {
     id: 'log-1',
-    projectId: 'demo-project-runofthemill',
+    projectId: 'demo-project-urbanforest',
     activityType: 'page_view',
     description: '고객이 공유 링크로 프로젝트를 열람했습니다.',
     createdAt: '2026-10-19T10:02:11Z',
   },
   {
     id: 'log-2',
-    projectId: 'demo-project-runofthemill',
+    projectId: 'demo-project-urbanforest',
     activityType: 'concept_select',
     description: '[로고] 드래그앤드롭 우선순위 1순위로 "시안 1 — 모던 지오메트릭 워드마크"을 확정했습니다.',
     createdAt: '2026-10-19T11:15:00Z',
   },
   {
     id: 'log-3',
-    projectId: 'demo-project-runofthemill',
+    projectId: 'demo-project-urbanforest',
     activityType: 'revision_submit',
     description: '제1차 수정 요청서가 제출되었습니다. (잔여 수정: 2회)',
     createdAt: '2026-10-19T11:45:00Z',
@@ -438,8 +438,8 @@ export const INITIAL_ACTIVITY_LOGS: ActivityLog[] = [
 ];
 
 export const INITIAL_ESTIMATE: ProjectEstimate = {
-  id: 'estimate-runofthemill-2026',
-  projectId: 'demo-project-runofthemill',
+  id: 'estimate-urbanforest-2026',
+  projectId: 'demo-project-urbanforest',
   title: '디자인 용역 공급 견적서',
   estimateNumber: 'EST-202610-001',
   issueDate: '2026-10-18',
@@ -451,10 +451,10 @@ export const INITIAL_ESTIMATE: ProjectEstimate = {
   senderEmail: 'contact@studio-atelier.kr',
   senderAddress: '서울특별시 용산구 한남대로 20길 14, 3층',
   senderBankAccount: '기업은행 010-5439-8012 (예금주: 스튜디오 아틀리에)',
-  receiverCompany: '런오브더밀 (Run of the Mill)',
-  receiverRepresentative: '김밀 대표',
-  receiverContact: '010-9281-3401',
-  receiverEmail: 'client@runofthemill.kr',
+  receiverCompany: '주식회사 어반포레스트 (Urban Forest Co.)',
+  receiverRepresentative: '김민준 대표',
+  receiverContact: '010-8421-5502',
+  receiverEmail: 'client@urbanforest.design',
   items: [
     {
       id: 'est-item-1',
@@ -467,8 +467,8 @@ export const INITIAL_ESTIMATE: ProjectEstimate = {
     },
     {
       id: 'est-item-2',
-      name: '테이크아웃 컵 & 슬리브 패키지 그래픽',
-      description: '8oz, 13oz, 16oz 규격별 컵홀더 인쇄 전개도 및 1도/2도 박 인쇄 칼선 도면',
+      name: '친환경 패키지 & 슬리브 패키지 그래픽',
+      description: '8oz, 13oz, 16oz 규격별 패키지 슬리브 인쇄 전개도 및 1도/2도 박 인쇄 칼선 도면',
       quantity: 1,
       unitPrice: 600000,
       amount: 600000,
@@ -494,15 +494,15 @@ export const INITIAL_ESTIMATE: ProjectEstimate = {
 };
 
 export const INITIAL_DEMO_PROJECT: Project = {
-  id: 'demo-project-runofthemill',
-  companyId: 'company-runofthemill',
-  companyName: '런오브더밀',
+  id: 'demo-project-urbanforest',
+  companyId: 'company-urbanforest',
+  companyName: '어반 포레스트',
   companyLogoUrl: STUDIO_ATELIER_LOGO_SVG, // 시안 제공 디자인 업체 로고 (스튜디오 아틀리에)
   ownerId: 'demo-designer-id',
-  title: '런오브더밀 브랜드 아이덴티티 리뉴얼',
-  clientName: '김밀 대표',
-  clientEmail: 'client@runofthemill.kr',
-  description: '스페셜티 로스터리 런오브더밀(Run of the Mill)의 미니멀하고 감각적인 브랜드 포지셔닝을 위한 로고, 컵홀더, 메뉴판 통합 비주얼 시안 프로젝트입니다.',
+  title: '어반 포레스트 브랜드 아이덴티티 리뉴얼',
+  clientName: '김민준 대표',
+  clientEmail: 'client@urbanforest.design',
+  description: '친환경 라이프스타일 브랜드 어반 포레스트(Urban Forest)의 미니멀하고 감각적인 브랜드 포지셔닝을 위한 로고, 친환경 패키지, 쇼룸 메뉴판 통합 비주얼 시안 프로젝트입니다.',
   status: 'revising',
   dueDate: '2026-11-20',
   maxRevisionCount: 9, // 디자인항목당 3회 기본적용 (3 * 3 = 9회)
@@ -510,7 +510,7 @@ export const INITIAL_DEMO_PROJECT: Project = {
   feedbackTokensTotal: 15, // 디자인항목당 5개 기본적용 (3 * 5 = 15개)
   feedbackTokensUsed: 1,
   maxSelectionCount: 3,
-  shareToken: 'runofthemill-sample-2026',
+  shareToken: 'urbanforest-sample-2026',
   sharePasswordHash: undefined,
   watermarkEnabled: false,
   downloadEnabled: true,

@@ -351,7 +351,7 @@ export function ProjectEstimateEditor({
                   type="text"
                   value={receiverCompany}
                   onChange={(e) => setReceiverCompany(e.target.value)}
-                  placeholder="예: 런오브더밀"
+                  placeholder="예: 어반 포레스트"
                   className="w-full px-3 py-1.5 text-xs bg-white focus:outline-none"
                 />
               </div>
@@ -362,7 +362,7 @@ export function ProjectEstimateEditor({
                   type="text"
                   value={receiverRepresentative}
                   onChange={(e) => setReceiverRepresentative(e.target.value)}
-                  placeholder="예: 김밀 대표"
+                  placeholder="예: 김민준 대표"
                   className="w-full px-3 py-1.5 text-xs bg-white focus:outline-none"
                 />
               </div>
@@ -373,7 +373,7 @@ export function ProjectEstimateEditor({
                   type="text"
                   value={receiverContact}
                   onChange={(e) => setReceiverContact(e.target.value)}
-                  placeholder="예: 010-9281-3401"
+                  placeholder="예: 010-8421-5502"
                   className="w-full px-3 py-1.5 text-xs bg-white focus:outline-none font-mono"
                 />
               </div>
@@ -384,7 +384,7 @@ export function ProjectEstimateEditor({
                   type="email"
                   value={receiverEmail}
                   onChange={(e) => setReceiverEmail(e.target.value)}
-                  placeholder="client@runofthemill.kr"
+                  placeholder="client@urbanforest.design"
                   className="w-full px-3 py-1.5 text-xs bg-white focus:outline-none"
                 />
               </div>

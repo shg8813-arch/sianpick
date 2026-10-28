@@ -29,7 +29,7 @@
 
 5. **DEMO MODE (즉시 실행 & 브라우저 저장)**
    - Supabase 계정이나 환경변수 설정이 없어도 로컬스토리지 기반으로 즉시 작동합니다.
-   - 초기 샘플 업체(런오브더밀), 프로젝트, 3개 디자인 항목(로고, 컵홀더, 메뉴판)과 각 시안들이 완벽히 세팅되어 있습니다.
+   - 초기 샘플 업체(어반 포레스트), 프로젝트, 3개 디자인 항목(로고, 친환경 패키지, 쇼룸 메뉴판)과 각 시안들이 완벽히 세팅되어 있습니다.
 
 ---
 
@@ -37,10 +37,10 @@
 
 - **메인 랜딩 페이지**: `http://localhost:3000/`
 - **디자이너 관리자 대시보드 (업체 관리 & 프로젝트 목록)**: `http://localhost:3000/dashboard`
-- **런오브더밀 프로젝트 상세 (디자인 항목 & 시안 관리)**: `http://localhost:3000/dashboard/projects/demo-project-runofthemill`
-- **고객 전용 공유 화면**: `http://localhost:3000/share/runofthemill-sample-2026`
-- **고객 선택시안 모아보기**: `http://localhost:3000/share/runofthemill-sample-2026/summary`
-- **고객 견적서 확인**: `http://localhost:3000/share/runofthemill-sample-2026/estimate`
+- **어반 포레스트 프로젝트 상세 (디자인 항목 & 시안 관리)**: `http://localhost:3000/dashboard/projects/demo-project-urbanforest`
+- **고객 전용 공유 화면**: `http://localhost:3000/share/urbanforest-sample-2026`
+- **고객 선택시안 모아보기**: `http://localhost:3000/share/urbanforest-sample-2026/summary`
+- **고객 견적서 확인**: `http://localhost:3000/share/urbanforest-sample-2026/estimate`
 
 ---
 

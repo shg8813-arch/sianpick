@@ -16,7 +16,7 @@ import {
   StudioProfile,
 } from '@/types';
 import { INITIAL_DEMO_PROJECT, INITIAL_COMPANIES, INITIAL_CONCEPTS, INITIAL_ESTIMATE, INITIAL_STUDIO_PROFILE } from '@/lib/demo/sample-data';
-import { generateRunOfTheMillSvg } from '@/lib/utils/svg-generator';
+import { generateUrbanForestSvg } from '@/lib/utils/svg-generator';
 
 const STORAGE_KEY = 'sianpick_projects_store_v8';
 const STORAGE_KEY_V7 = 'sianpick_projects_store_v7';
@@ -55,13 +55,13 @@ export class DemoProjectRepository implements IProjectRepository {
           }
 
           const newConceptId = `concept-${item.id}-${num}-${Date.now()}`;
-          const newSvg = generateRunOfTheMillSvg(svgType, item.name, `시안 ${num}`);
+          const newSvg = generateUrbanForestSvg(svgType, item.name, `시안 ${num}`);
           const newConcept: Concept = {
             id: newConceptId,
             projectId: project.id,
             itemId: item.id,
             title: `시안 ${num} — ${item.name} 비주얼 제안`,
-            description: `런오브더밀의 감각적인 무드를 반영한 ${item.name}의 ${num}번째 테스트 시안입니다.`,
+            description: `어반 포레스트의 감각적인 무드를 반영한 ${item.name}의 ${num}번째 테스트 시안입니다.`,
             designConcept: `공간과 제품의 일체감을 높이고 미니멀한 브랜드 경험을 제공하도록 그리드를 설계했습니다.`,
             colorFontDescription: '모노크롬 잉크(#09090B), 클린 화이트(#FFFFFF)',
             usageRecommendation: '매장 비치 및 패키지 인쇄물 적용',
@@ -184,7 +184,7 @@ export class DemoProjectRepository implements IProjectRepository {
           try {
             const list: Project[] = JSON.parse(prevRaw);
             const userCustomProjects = list.filter(
-              (p) => p.id !== 'demo-project-lumiere' && p.id !== 'demo-project-runofthemill'
+              (p) => p.id !== 'demo-project-lumiere' && p.id !== 'demo-project-urbanforest' && p.id !== 'demo-project-runofthemill'
             );
             projects = [INITIAL_DEMO_PROJECT, ...userCustomProjects];
           } catch {
@@ -194,7 +194,7 @@ export class DemoProjectRepository implements IProjectRepository {
         projects = projects.map((p) => {
           const updated = this.ensureThreeConceptsPerItem(p);
           const itemCount = updated.designItems?.length || 1;
-          if (p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')) {
+          if (p.id === 'demo-project-urbanforest' || p.id === 'demo-project-runofthemill' || p.title.includes('어반 포레스트') || p.title.includes('런오브더밀')) {
             updated.estimate = updated.estimate || INITIAL_ESTIMATE;
             updated.feedbackTokensTotal = 15; // 3항목 * 5
             updated.maxRevisionCount = 9; // 3항목 * 3
@@ -210,22 +210,37 @@ export class DemoProjectRepository implements IProjectRepository {
       }
 
       let projects: Project[] = JSON.parse(raw);
+      let modified = false;
+
+      // Sanitize legacy "runofthemill" projects in user's localStorage
+      projects = projects.map((p) => {
+        if (p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀') || p.companyName?.includes('런오브더밀')) {
+          modified = true;
+          return {
+            ...INITIAL_DEMO_PROJECT,
+            title: p.title.includes('런오브더밀') ? p.title.replace(/런오브더밀/g, '어반 포레스트') : INITIAL_DEMO_PROJECT.title,
+            companyName: p.companyName === '런오브더밀' ? '어반 포레스트' : p.companyName,
+          };
+        }
+        return p;
+      });
+
       // Ensure INITIAL_DEMO_PROJECT is present or updated if needed in demo mode
       if (currentKey === STORAGE_KEY) {
-        const hasRunOfTheMill = projects.some(
-          (p) => p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')
+        const hasUrbanForest = projects.some(
+          (p) => p.id === 'demo-project-urbanforest' || p.title.includes('어반 포레스트')
         );
-        if (!hasRunOfTheMill) {
+        if (!hasUrbanForest) {
           projects.unshift(INITIAL_DEMO_PROJECT);
+          modified = true;
         }
       }
       
       // Ensure all projects have token counts and estimate
-      let modified = false;
       projects = projects.map((p) => {
         let updated = this.ensureThreeConceptsPerItem(p);
         const itemCount = updated.designItems?.length || 1;
-        if ((p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')) && !updated.estimate) {
+        if ((p.id === 'demo-project-urbanforest' || p.id === 'demo-project-runofthemill' || p.title.includes('어반 포레스트') || p.title.includes('런오브더밀')) && !updated.estimate) {
           updated = { ...updated, estimate: INITIAL_ESTIMATE };
           modified = true;
         }
@@ -302,11 +317,22 @@ export class DemoProjectRepository implements IProjectRepository {
         window.localStorage.setItem(currentKey, JSON.stringify(INITIAL_COMPANIES));
         return INITIAL_COMPANIES;
       }
-      const list: Company[] = JSON.parse(item);
-      if (currentKey === COMPANIES_KEY && !list.some((c) => c.id === 'company-runofthemill' || c.name.includes('런오브더밀'))) {
-        const merged = [...INITIAL_COMPANIES, ...list.filter((c) => c.id !== 'company-lumiere')];
+      let list: Company[] = JSON.parse(item);
+      let compModified = false;
+      list = list.map((c) => {
+        if (c.id === 'company-runofthemill' || c.name.includes('런오브더밀')) {
+          compModified = true;
+          return INITIAL_COMPANIES[0];
+        }
+        return c;
+      });
+      if (currentKey === COMPANIES_KEY && !list.some((c) => c.id === 'company-urbanforest' || c.name.includes('어반 포레스트'))) {
+        const merged = [...INITIAL_COMPANIES, ...list.filter((c) => c.id !== 'company-lumiere' && c.id !== 'company-runofthemill')];
         window.localStorage.setItem(currentKey, JSON.stringify(merged));
         return merged;
+      }
+      if (compModified) {
+        window.localStorage.setItem(currentKey, JSON.stringify(list));
       }
       return list;
     } catch {
@@ -413,8 +439,8 @@ export class DemoProjectRepository implements IProjectRepository {
         }
       } catch {}
     }
-    if (!proj && (id === 'sample-urban-roasters' || id === 'demo-project-lumiere' || id === 'demo-project-runofthemill')) {
-      proj = projects.find((p) => p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')) || projects[0] || null;
+    if (!proj && (id === 'demo-project-urbanforest' || id === 'sample-urban-roasters' || id === 'demo-project-lumiere' || id === 'demo-project-runofthemill')) {
+      proj = projects.find((p) => p.id === 'demo-project-urbanforest' || p.id === 'demo-project-runofthemill' || p.title.includes('어반 포레스트') || p.title.includes('런오브더밀')) || projects[0] || null;
     }
     return proj || null;
   }
@@ -440,8 +466,8 @@ export class DemoProjectRepository implements IProjectRepository {
         }
       } catch {}
     }
-    if (!proj && (token === 'runofthemill-sample-2026' || token === 'lumiere-sample-2026' || token === 'share-urban-sample-01')) {
-      proj = projects.find((p) => p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')) || projects[0] || null;
+    if (!proj && (token === 'urbanforest-sample-2026' || token === 'runofthemill-sample-2026' || token === 'lumiere-sample-2026' || token === 'share-urban-sample-01')) {
+      proj = projects.find((p) => p.id === 'demo-project-urbanforest' || p.id === 'demo-project-runofthemill' || p.title.includes('어반 포레스트') || p.title.includes('런오브더밀')) || projects[0] || null;
     }
     return proj || null;
   }
