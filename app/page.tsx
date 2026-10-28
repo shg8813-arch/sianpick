@@ -74,13 +74,10 @@ export default function HomePage() {
           <span>시각디자인 스튜디오와 클라이언트를 위한 전문 시안 전달 솔루션</span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold text-zinc-900 tracking-tight leading-[1.14] max-w-5xl mx-auto">
+        <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold text-zinc-900 tracking-tight leading-[1.3] sm:leading-[1.34] md:leading-[1.38] max-w-5xl mx-auto">
           시안을 보고, 고르고,
           <br />
-          <span className="text-zinc-950 underline decoration-zinc-300 underline-offset-8">
-            수정하고, 확정하는
-          </span>{' '}
-          감각적인 방법
+          수정하고, 확정하는 감각적인 방법
         </h1>
 
         <p className="mt-8 text-base sm:text-xl text-zinc-600 max-w-3xl mx-auto leading-relaxed font-normal">
