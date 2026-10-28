@@ -341,13 +341,42 @@ export default function ClientEstimatePage() {
             )}
 
             {/* Official Stamp & Sign Area */}
-            <div className="pt-8 text-center text-xs text-zinc-500 space-y-2">
-              <p>위와 같이 견적서를 제출합니다.</p>
-              <div className="font-bold text-zinc-900 text-sm pt-2">
-                {estimate.senderName || '스튜디오 아틀리에 (STUDIO ATELIER)'}
-                {estimate.senderRepresentative && ` 대표 ${estimate.senderRepresentative}`}
-              </div>
-            </div>
+            {(() => {
+              const attachedLogo = estimate.senderLogoUrl;
+              const logoHeight = estimate.senderLogoHeight || 42;
+              const providerName = estimate.senderName || '스튜디오 아틀리에 (STUDIO ATELIER)';
+              return (
+                <div className="pt-12 text-center text-xs text-zinc-500 space-y-3">
+                  <p className="text-zinc-400">위와 같이 견적서를 제출합니다.</p>
+                  
+                  {attachedLogo ? (
+                    <div className="flex flex-col items-center justify-center pt-2">
+                      <img
+                        src={attachedLogo}
+                        alt={providerName}
+                        style={{ height: `${logoHeight}px` }}
+                        className="max-w-[260px] object-contain mx-auto"
+                      />
+                      <div className="font-bold text-zinc-900 text-sm mt-3 tracking-tight">
+                        {providerName}
+                        {estimate.senderRepresentative && ` 대표 ${estimate.senderRepresentative}`}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="pt-2">
+                      <div className="font-bold text-zinc-900 text-base tracking-tight">
+                        {providerName}
+                      </div>
+                      {estimate.senderRepresentative && (
+                        <div className="text-xs text-zinc-500 mt-1">
+                          대표 {estimate.senderRepresentative}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>

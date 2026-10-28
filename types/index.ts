@@ -223,6 +223,8 @@ export interface ProjectEstimate {
   senderEmail?: string; // 이메일
   senderAddress?: string; // 사업장 소재지
   senderBankAccount?: string; // 입금계좌
+  senderLogoUrl?: string; // 공급자 직인/로고 이미지 (하단 삽입용, 미첨부시 업체명만 표시)
+  senderLogoHeight?: number; // 로고 표시 높이 (px)
   receiverCompany?: string; // 공급받는자 상호/업체명
   receiverRepresentative?: string; // 대표자/담당자
   receiverContact?: string; // 연락처

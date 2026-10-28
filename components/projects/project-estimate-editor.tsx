@@ -16,6 +16,9 @@ import {
   Calendar,
   CheckCircle2,
   Loader2,
+  UploadCloud,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -85,6 +88,16 @@ export function ProjectEstimateEditor({
     initialEstimate?.senderBankAccount || '기업은행 010-5439-8012 (예금주: 스튜디오 아틀리에)'
   );
 
+  // Logo Attachment for Estimate Bottom
+  const [senderLogoUrl, setSenderLogoUrl] = useState<string>(
+    initialEstimate?.senderLogoUrl || ''
+  );
+  const [senderLogoHeight, setSenderLogoHeight] = useState<number>(
+    initialEstimate?.senderLogoHeight || 42
+  );
+  const [studioProfileLogo, setStudioProfileLogo] = useState<string>('');
+  const [studioProfileLogoHeight, setStudioProfileLogoHeight] = useState<number>(42);
+
   // Load global studio profile from dashboard
   useEffect(() => {
     const loadStudio = async () => {
@@ -92,6 +105,14 @@ export function ProjectEstimateEditor({
         const repo = getProjectRepository();
         const profile = await repo.getStudioProfile();
         if (profile) {
+          if (profile.logoUrl) {
+            setStudioProfileLogo(profile.logoUrl);
+            if (profile.logoHeight) setStudioProfileLogoHeight(profile.logoHeight);
+          }
+          if (initialEstimate?.senderLogoUrl === undefined && profile.logoUrl) {
+            setSenderLogoUrl(profile.logoUrl);
+            if (profile.logoHeight) setSenderLogoHeight(profile.logoHeight);
+          }
           if (!initialEstimate?.senderName || initialEstimate.senderName.includes('스튜디오 아틀리에')) {
             setSenderName(profile.studioName || '');
           }
@@ -120,6 +141,25 @@ export function ProjectEstimateEditor({
     };
     loadStudio();
   }, [initialEstimate]);
+
+  const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('이미지 파일(PNG, JPG, SVG 등)만 업로드할 수 있습니다.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setSenderLogoUrl(event.target.result as string);
+        toast.success('견적서 하단 로고가 첨부되었습니다.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Recipient
   const [receiverCompany, setReceiverCompany] = useState(
@@ -227,6 +267,8 @@ export function ProjectEstimateEditor({
         senderEmail: senderEmail.trim(),
         senderAddress: senderAddress.trim(),
         senderBankAccount: senderBankAccount.trim(),
+        senderLogoUrl: senderLogoUrl.trim() || undefined,
+        senderLogoHeight: senderLogoUrl.trim() ? senderLogoHeight : undefined,
         receiverCompany: receiverCompany.trim(),
         receiverRepresentative: receiverRepresentative.trim(),
         receiverContact: receiverContact.trim(),
@@ -467,6 +509,117 @@ export function ProjectEstimateEditor({
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* 견적서 하단 로고 첨부 설정 (첨부 시 로고 표기, 미첨부 시 업체명만 단독 표기) */}
+        <div className="p-5 bg-zinc-50/70 shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-zinc-500" />
+                견적서 하단 로고 첨부 설정
+              </span>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                로고를 첨부하면 견적서 하단 서명 영역에 로고가 삽입되며, <strong>로고를 첨부하지 않을 경우 업체명 텍스트만 단독 표기</strong>됩니다.
+              </p>
+            </div>
+
+            {senderLogoUrl && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSenderLogoUrl('');
+                  toast.success('로고 첨부가 해제되었습니다. 견적서 하단에 업체명만 표기됩니다.');
+                }}
+                className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 font-semibold underline self-start sm:self-auto shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>로고 첨부 해제 (업체명만 표기)</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <input
+              type="file"
+              id="estimate-bottom-logo"
+              accept="image/*"
+              onChange={handleLogoFileUpload}
+              className="hidden"
+            />
+            <label
+              htmlFor="estimate-bottom-logo"
+              className="px-3.5 py-2 text-xs font-bold bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-800 cursor-pointer shadow-sm transition-colors flex items-center gap-1.5"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-zinc-600" />
+              <span>{senderLogoUrl ? '로고 이미지 변경' : '로고 파일 첨부 (PNG/JPG/SVG)'}</span>
+            </label>
+
+            {studioProfileLogo && studioProfileLogo !== senderLogoUrl && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSenderLogoUrl(studioProfileLogo);
+                  if (studioProfileLogoHeight) setSenderLogoHeight(studioProfileLogoHeight);
+                  toast.success('내 스튜디오 로고가 첨부되었습니다.');
+                }}
+                className="px-3.5 py-2 text-xs font-medium bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 transition-colors"
+              >
+                내 스튜디오 로고 가져오기
+              </button>
+            )}
+
+            {senderLogoUrl && (
+              <div className="flex items-center gap-2 text-xs bg-white border border-zinc-200 px-3 py-1.5 shadow-sm ml-auto">
+                <span className="text-[11px] text-zinc-500 font-medium">로고 높이:</span>
+                <input
+                  type="range"
+                  min="24"
+                  max="70"
+                  value={senderLogoHeight}
+                  onChange={(e) => setSenderLogoHeight(Number(e.target.value))}
+                  className="w-24 accent-zinc-900 cursor-pointer"
+                />
+                <span className="font-mono text-zinc-700 text-xs w-9 text-right font-bold">{senderLogoHeight}px</span>
+              </div>
+            )}
+          </div>
+
+          {/* 하단 실시간 미리보기 박스 */}
+          <div className="mt-2 p-5 bg-white border border-dashed border-zinc-200 text-center space-y-2">
+            <span className="text-[10px] font-mono tracking-wider text-zinc-400 uppercase block">
+              견적서 하단 최종 출력 실시간 미리보기
+            </span>
+            <p className="text-xs text-zinc-400">위와 같이 견적서를 제출합니다.</p>
+
+            {senderLogoUrl ? (
+              <div className="flex flex-col items-center justify-center pt-2">
+                <img
+                  src={senderLogoUrl}
+                  alt={senderName}
+                  style={{ height: `${senderLogoHeight}px` }}
+                  className="max-w-[240px] object-contain mx-auto"
+                />
+                <div className="font-bold text-zinc-900 text-xs mt-2.5">
+                  {senderName || '스튜디오명'} {senderRepresentative && `대표 ${senderRepresentative}`}
+                </div>
+              </div>
+            ) : (
+              <div className="pt-2">
+                <div className="font-bold text-zinc-900 text-sm">
+                  {senderName || '스튜디오명'}
+                </div>
+                {senderRepresentative && (
+                  <div className="text-xs text-zinc-500 mt-0.5">
+                    대표 {senderRepresentative}
+                  </div>
+                )}
+                <span className="inline-block mt-2 px-2 py-0.5 bg-zinc-100 text-zinc-500 text-[10px] font-mono">
+                  로고 미첨부 — 업체명 텍스트 단독 출력
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
