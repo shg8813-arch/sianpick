@@ -1036,11 +1036,12 @@ export class DemoProjectRepository implements IProjectRepository {
       }
     }
 
-    // If logo was updated, synchronize to all projects' companyLogoUrl
-    if (updates.logoUrl !== undefined) {
+    // If logo or logoHeight was updated, synchronize to all projects
+    if (updates.logoUrl !== undefined || updates.logoHeight !== undefined) {
       const projects = this.getStorage();
       projects.forEach((p) => {
-        p.companyLogoUrl = updates.logoUrl;
+        if (updates.logoUrl !== undefined) p.companyLogoUrl = updates.logoUrl;
+        if (updates.logoHeight !== undefined) p.companyLogoHeight = updates.logoHeight;
       });
       this.saveStorage(projects);
     }

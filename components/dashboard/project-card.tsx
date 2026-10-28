@@ -110,9 +110,9 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
             href={`/share/${project.shareToken}`}
             title="고객 화면 미리보기"
             target="_blank"
-            className="p-1.5 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 shadow-sm transition-colors"
+            className="p-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 shadow-sm transition-colors rounded"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+            <ExternalLink className="w-3.5 h-3.5 text-orange-600" />
           </Link>
 
           {onDelete && (

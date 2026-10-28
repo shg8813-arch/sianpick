@@ -38,6 +38,7 @@ export interface UserProfile {
 export interface StudioProfile {
   studioName: string; // 디자인 업체 / 스튜디오 상호명
   logoUrl?: string; // 디자인 업체 로고 이미지 URL (고객 페이지 상단 노출)
+  logoHeight?: number; // 로고 표시 높이 (px 단위, 기본 36, 20~72px)
   representative: string; // 대표자 성명
   registrationNumber?: string; // 사업자등록번호
   contact?: string; // 스튜디오 연락처
@@ -227,6 +228,7 @@ export interface Project {
   companyId?: string;
   companyName?: string;
   companyLogoUrl?: string; // 시안을 제공하는 디자인 업체 로고 이미지 URL (고객 페이지 최상단 바에 표시)
+  companyLogoHeight?: number; // 로고 표시 높이 (px)
   ownerId: string;
   title: string;
   clientName: string;

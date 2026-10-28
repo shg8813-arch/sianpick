@@ -460,7 +460,7 @@ export default function ProjectDetailPage() {
               <Link
                 href={`/share/${project.shareToken}`}
                 target="_blank"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-xs font-semibold text-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-xs font-bold text-white shadow-[0_2px_10px_rgba(249,115,22,0.25)] transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 고객 화면 미리보기
@@ -596,7 +596,7 @@ export default function ProjectDetailPage() {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
                   isActive
-                    ? 'bg-zinc-900 text-white shadow-sm'
+                    ? 'bg-zinc-200 text-zinc-900 shadow-sm font-bold border border-zinc-300'
                     : 'text-zinc-600 hover:text-zinc-900 hover:bg-white'
                 }`}
               >

@@ -50,6 +50,7 @@ export default function ClientSharePage() {
   } | null>(null);
 
   const [studioLogo, setStudioLogo] = useState<string | null>(null);
+  const [studioLogoHeight, setStudioLogoHeight] = useState<number>(36);
 
   // Load project
   const loadProject = async () => {
@@ -67,6 +68,7 @@ export default function ClientSharePage() {
       }
       setProject(proj);
       setStudioLogo(profile?.logoUrl || proj.companyLogoUrl || STUDIO_ATELIER_LOGO_SVG);
+      setStudioLogoHeight(profile?.logoHeight || proj.companyLogoHeight || 36);
     } catch {
       setError('프로젝트 정보를 불러오는 중 오류가 발생했습니다.');
     } finally {
@@ -229,13 +231,14 @@ export default function ClientSharePage() {
       <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md shadow-[0_2px_16px_rgba(0,0,0,0.03)] border-b border-zinc-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Design Studio Company Logo Slot (시안 제공 디자인 업체 로고) */}
-          <div className="flex items-center">
+          <div className="flex items-center" style={{ height: `${studioLogoHeight}px` }}>
             {(studioLogo || project.companyLogoUrl) ? (
-              <div className="h-9 max-w-[220px] flex items-center">
+              <div className="max-w-[260px] flex items-center" style={{ height: `${studioLogoHeight}px` }}>
                 <img
                   src={studioLogo || project.companyLogoUrl}
                   alt="디자인 업체 로고"
-                  className="h-full w-auto max-h-9 object-contain"
+                  className="w-auto object-contain"
+                  style={{ height: `${studioLogoHeight}px`, maxHeight: `${studioLogoHeight}px` }}
                 />
               </div>
             ) : (
@@ -261,7 +264,7 @@ export default function ClientSharePage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 {project.companyName && (
-                  <span className="text-[14px] font-semibold text-zinc-800 bg-zinc-100 px-3 py-1 shadow-sm">
+                  <span className="text-[12.6px] font-semibold text-white bg-black px-2.5 py-1 shadow-sm">
                     {project.companyName}
                   </span>
                 )}
@@ -304,9 +307,9 @@ export default function ClientSharePage() {
 
                 <Link
                   href={`/share/${shareToken}/summary`}
-                  className="w-1/2 sm:w-auto px-5 py-3 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs tracking-wide shadow-[0_4px_14px_rgba(0,0,0,0.1)] transition-all flex items-center justify-center gap-2"
+                  className="w-1/2 sm:w-auto px-5 py-3 bg-zinc-200 hover:bg-zinc-300 text-zinc-900 font-bold text-xs tracking-wide shadow-sm border border-zinc-300/80 transition-all flex items-center justify-center gap-2"
                 >
-                  <Trophy className="w-4 h-4 text-amber-400" />
+                  <Trophy className="w-4 h-4 text-amber-500" />
                   <span>선택시안 ({selectedItemsCount}/{designItems.length})</span>
                 </Link>
               </div>
@@ -322,7 +325,7 @@ export default function ClientSharePage() {
               onClick={() => setSelectedItemFilter('all')}
               className={`px-4 py-2 text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                 selectedItemFilter === 'all'
-                  ? 'bg-zinc-900 text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
+                  ? 'bg-zinc-200 text-zinc-900 font-bold border border-zinc-300 shadow-sm'
                   : 'bg-white text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 shadow-[0_2px_8px_rgba(0,0,0,0.025)] border border-zinc-200/60'
               }`}
             >
@@ -341,12 +344,12 @@ export default function ClientSharePage() {
                   onClick={() => setSelectedItemFilter(item.id)}
                   className={`px-4 py-2 text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                     isCurrent
-                      ? 'bg-zinc-900 text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
+                      ? 'bg-zinc-200 text-zinc-900 font-bold border border-zinc-300 shadow-sm'
                       : 'bg-white text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 shadow-[0_2px_8px_rgba(0,0,0,0.025)] border border-zinc-200/60'
                   }`}
                 >
                   <span>{item.name}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 ${isCurrent ? 'bg-zinc-800 text-white' : 'bg-zinc-100 text-zinc-600'}`}>
+                  <span className={`text-[10px] px-1.5 py-0.2 ${isCurrent ? 'bg-zinc-300 text-zinc-900 font-bold' : 'bg-zinc-100 text-zinc-600'}`}>
                     {count}
                   </span>
                   {hasCandidate && (
@@ -395,9 +398,9 @@ export default function ClientSharePage() {
             <div className="flex items-center justify-center sm:justify-end w-full md:w-auto">
               <Link
                 href={`/share/${shareToken}/summary`}
-                className="w-full sm:w-auto px-7 py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs tracking-wide shadow-[0_4px_14px_rgba(0,0,0,0.15)] transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-7 py-3.5 bg-zinc-200 hover:bg-zinc-300 text-zinc-900 font-bold text-xs tracking-wide shadow-sm border border-zinc-300/80 transition-all flex items-center justify-center gap-2"
               >
-                <Trophy className="w-4 h-4 text-amber-400" />
+                <Trophy className="w-4 h-4 text-amber-500" />
                 <span>선택시안</span>
               </Link>
             </div>
@@ -419,7 +422,7 @@ export default function ClientSharePage() {
         <div className="flex items-center gap-2">
           <Link
             href={`/share/${shareToken}/summary`}
-            className="px-4 py-2 bg-zinc-900 text-white text-xs font-semibold shadow-sm"
+            className="px-4 py-2 bg-zinc-200 hover:bg-zinc-300 text-zinc-900 font-bold border border-zinc-300 text-xs shadow-sm"
           >
             선택시안
           </Link>

@@ -40,6 +40,7 @@ export default function DashboardPage() {
   const [studioProfile, setStudioProfile] = useState<StudioProfile | null>(null);
   const [studioName, setStudioName] = useState('');
   const [studioLogoUrl, setStudioLogoUrl] = useState('');
+  const [studioLogoHeight, setStudioLogoHeight] = useState<number>(36);
   const [studioRepresentative, setStudioRepresentative] = useState('');
   const [studioRegistrationNumber, setStudioRegistrationNumber] = useState('');
   const [studioContact, setStudioContact] = useState('');
@@ -70,6 +71,7 @@ export default function DashboardPage() {
       if (profile) {
         setStudioName(profile.studioName || '');
         setStudioLogoUrl(profile.logoUrl || '');
+        setStudioLogoHeight(profile.logoHeight || 36);
         setStudioRepresentative(profile.representative || '');
         setStudioRegistrationNumber(profile.registrationNumber || '');
         setStudioContact(profile.contact || '');
@@ -107,6 +109,7 @@ export default function DashboardPage() {
       const updated = await repo.updateStudioProfile({
         studioName: studioName.trim(),
         logoUrl: studioLogoUrl.trim() || undefined,
+        logoHeight: studioLogoHeight,
         representative: studioRepresentative.trim(),
         registrationNumber: studioRegistrationNumber.trim() || undefined,
         contact: studioContact.trim() || undefined,
@@ -252,7 +255,7 @@ export default function DashboardPage() {
             onClick={() => setViewMode('projects')}
             className={`px-4 py-2 text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
               viewMode === 'projects'
-                ? 'bg-zinc-900 text-white shadow-sm'
+                ? 'bg-zinc-200 text-zinc-900 shadow-sm font-bold border border-zinc-300'
                 : 'text-zinc-600 hover:text-zinc-900 hover:bg-white'
             }`}
           >
@@ -265,7 +268,7 @@ export default function DashboardPage() {
             onClick={() => setViewMode('companies')}
             className={`px-4 py-2 text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
               viewMode === 'companies'
-                ? 'bg-zinc-900 text-white shadow-sm'
+                ? 'bg-zinc-200 text-zinc-900 shadow-sm font-bold border border-zinc-300'
                 : 'text-zinc-600 hover:text-zinc-900 hover:bg-white'
             }`}
           >
@@ -278,7 +281,7 @@ export default function DashboardPage() {
             onClick={() => setViewMode('studio')}
             className={`px-4 py-2 text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
               viewMode === 'studio'
-                ? 'bg-zinc-900 text-white shadow-sm'
+                ? 'bg-zinc-200 text-zinc-900 shadow-sm font-bold border border-zinc-300'
                 : 'text-zinc-600 hover:text-zinc-900 hover:bg-white'
             }`}
           >
@@ -322,7 +325,7 @@ export default function DashboardPage() {
                     onClick={() => setSelectedStatus(tab.id)}
                     className={`px-3 py-1.5 font-medium transition-all ${
                       selectedStatus === tab.id
-                        ? 'bg-zinc-900 text-white shadow-sm'
+                        ? 'bg-zinc-200 text-zinc-900 shadow-sm font-bold border border-zinc-300'
                         : 'text-zinc-600 hover:text-zinc-950 bg-zinc-50'
                     }`}
                   >
@@ -513,12 +516,16 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 bg-zinc-50 border border-zinc-200">
-                  <div className="h-16 px-4 bg-white border border-zinc-200 flex items-center justify-center min-w-[200px] shrink-0">
+                  <div
+                    className="px-4 bg-white border border-zinc-200 flex items-center justify-center min-w-[200px] shrink-0 transition-all"
+                    style={{ height: `${Math.max(68, studioLogoHeight + 20)}px` }}
+                  >
                     {studioLogoUrl ? (
                       <img
                         src={studioLogoUrl}
                         alt="스튜디오 로고"
-                        className="h-9 max-w-[180px] object-contain"
+                        style={{ height: `${studioLogoHeight}px`, maxHeight: `${studioLogoHeight}px` }}
+                        className="max-w-[200px] object-contain transition-all"
                       />
                     ) : (
                       <span className="text-xs text-zinc-400 font-medium">로고 미등록</span>
@@ -569,6 +576,56 @@ export default function DashboardPage() {
                       placeholder="로고 이미지 주소 직접 입력 (URL 또는 data:image/...)"
                       className="w-full px-3.5 py-2 text-xs border border-zinc-200 bg-white focus:outline-none focus:border-zinc-800"
                     />
+                  </div>
+                </div>
+
+                {/* Logo Size Control Slider & Presets */}
+                <div className="p-4 bg-zinc-50 border border-zinc-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
+                      <span>내 업체 로고 표시 크기 조절 (고객 공유 화면 상단 바)</span>
+                    </label>
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 bg-white border border-zinc-200 text-zinc-900 rounded">
+                      {studioLogoHeight}px
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] text-zinc-400 font-mono">20px</span>
+                    <input
+                      type="range"
+                      min={20}
+                      max={72}
+                      step={2}
+                      value={studioLogoHeight}
+                      onChange={(e) => setStudioLogoHeight(Number(e.target.value))}
+                      className="w-full accent-zinc-900 cursor-pointer"
+                    />
+                    <span className="text-[11px] text-zinc-400 font-mono">72px</span>
+                  </div>
+
+                  {/* Preset Buttons */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                    <span className="text-[11px] text-zinc-400 mr-1">빠른 크기 선택:</span>
+                    {[
+                      { label: '소형 (28px)', size: 28 },
+                      { label: '기본 (36px)', size: 36 },
+                      { label: '중형 (44px)', size: 44 },
+                      { label: '대형 (56px)', size: 56 },
+                    ].map((preset) => (
+                      <button
+                        key={preset.size}
+                        type="button"
+                        onClick={() => setStudioLogoHeight(preset.size)}
+                        className={`text-xs px-2.5 py-1 transition-colors ${
+                          studioLogoHeight === preset.size
+                            ? 'bg-zinc-900 text-white font-bold'
+                            : 'bg-white hover:bg-zinc-100 text-zinc-700 border border-zinc-200'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

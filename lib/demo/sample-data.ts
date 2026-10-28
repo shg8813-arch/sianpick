@@ -20,6 +20,7 @@ export const STUDIO_ATELIER_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http
 export const INITIAL_STUDIO_PROFILE: StudioProfile = {
   studioName: '스튜디오 아틀리에 (STUDIO ATELIER)',
   logoUrl: STUDIO_ATELIER_LOGO_SVG,
+  logoHeight: 36,
   representative: '이시안',
   registrationNumber: '214-88-12345',
   contact: '02-543-9801',
