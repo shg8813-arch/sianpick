@@ -727,14 +727,30 @@ export class DemoProjectRepository implements IProjectRepository {
     if (!project || !project.concepts) return;
 
     const conceptMap = new Map(project.concepts.map((c) => [c.id, c]));
-    project.concepts = conceptIds
-      .map((id, index) => {
-        const c = conceptMap.get(id);
-        if (c) c.displayOrder = index + 1;
-        return c;
-      })
-      .filter((c): c is Concept => !!c);
+    conceptIds.forEach((id, index) => {
+      const c = conceptMap.get(id);
+      if (c) c.displayOrder = index + 1;
+    });
 
+    const reorderedSet = new Set(conceptIds);
+    const reorderedList = conceptIds.map((id) => conceptMap.get(id)).filter((c): c is Concept => !!c);
+
+    let reorderedIdx = 0;
+    const finalConcepts: Concept[] = [];
+    for (const c of project.concepts) {
+      if (reorderedSet.has(c.id)) {
+        if (reorderedIdx < reorderedList.length) {
+          finalConcepts.push(reorderedList[reorderedIdx++]);
+        }
+      } else {
+        finalConcepts.push(c);
+      }
+    }
+    while (reorderedIdx < reorderedList.length) {
+      finalConcepts.push(reorderedList[reorderedIdx++]);
+    }
+
+    project.concepts = finalConcepts;
     this.saveStorage(projects);
   }
 

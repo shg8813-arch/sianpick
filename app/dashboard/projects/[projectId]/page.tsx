@@ -80,6 +80,10 @@ export default function ProjectDetailPage() {
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
 
+  // Concept Reorder Drag-and-Drop state
+  const [draggedConceptId, setDraggedConceptId] = useState<string | null>(null);
+  const [dragOverConceptId, setDragOverConceptId] = useState<string | null>(null);
+
   // Design Item Creation state (직접 작성, 자동화 버튼 금지)
   const [newItemName, setNewItemName] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
@@ -257,6 +261,82 @@ export default function ProjectDetailPage() {
       await loadProject();
     } catch {
       toast.error('디자인 항목 순서 변경 중 오류가 발생했습니다.');
+    }
+  };
+
+  // Concept Drag and Drop handlers
+  const handleConceptDragStart = (e: React.DragEvent, conceptId: string) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('text/plain', conceptId);
+    setDraggedConceptId(conceptId);
+  };
+
+  const handleConceptDragOver = (e: React.DragEvent, conceptId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragOverConceptId !== conceptId) {
+      setDragOverConceptId(conceptId);
+    }
+  };
+
+  const handleConceptDragLeave = (e: React.DragEvent, conceptId: string) => {
+    e.stopPropagation();
+    if (dragOverConceptId === conceptId) {
+      setDragOverConceptId(null);
+    }
+  };
+
+  const handleDropConcept = async (targetConceptId: string, itemId?: string) => {
+    if (!draggedConceptId || draggedConceptId === targetConceptId || !project?.concepts) return;
+
+    const scopedConcepts = itemId
+      ? project.concepts.filter((c) => c.itemId === itemId)
+      : project.concepts.filter((c) => !c.itemId || !project.designItems?.some((it) => it.id === c.itemId));
+
+    const fromIndex = scopedConcepts.findIndex((c) => c.id === draggedConceptId);
+    const toIndex = scopedConcepts.findIndex((c) => c.id === targetConceptId);
+    if (fromIndex === -1 || toIndex === -1) {
+      setDraggedConceptId(null);
+      setDragOverConceptId(null);
+      return;
+    }
+
+    const reorderedScoped = [...scopedConcepts];
+    const [moved] = reorderedScoped.splice(fromIndex, 1);
+    reorderedScoped.splice(toIndex, 0, moved);
+
+    const newScopedIds = reorderedScoped.map((c) => c.id);
+
+    // Optimistic local state update
+    const conceptMap = new Map(project.concepts.map((c) => [c.id, { ...c }]));
+    reorderedScoped.forEach((c, idx) => {
+      const item = conceptMap.get(c.id);
+      if (item) item.displayOrder = idx + 1;
+    });
+
+    const reorderedSet = new Set(newScopedIds);
+    const updatedAllConcepts = project.concepts.map((c) => {
+      if (reorderedSet.has(c.id)) {
+        return conceptMap.get(c.id)!;
+      }
+      return c;
+    });
+
+    setProject({
+      ...project,
+      concepts: updatedAllConcepts,
+    });
+
+    setDraggedConceptId(null);
+    setDragOverConceptId(null);
+
+    try {
+      const repo = getProjectRepository();
+      await repo.reorderConcepts(project.id, newScopedIds);
+      toast.success('시안 순서가 성공적으로 변경되었습니다.');
+      await loadProject();
+    } catch {
+      toast.error('시안 순서 변경 중 오류가 발생했습니다.');
     }
   };
 
@@ -1122,6 +1202,21 @@ export default function ProjectDetailPage() {
                                   commentCount={comments.filter((c) => c.conceptId === concept.id).length}
                                   selection={selections.find((s) => s.conceptId === concept.id)}
                                   isAdmin
+                                  isDraggable
+                                  isBeingDragged={draggedConceptId === concept.id}
+                                  isDragOver={dragOverConceptId === concept.id}
+                                  onDragStart={(e) => handleConceptDragStart(e, concept.id)}
+                                  onDragOver={(e) => handleConceptDragOver(e, concept.id)}
+                                  onDragLeave={(e) => handleConceptDragLeave(e, concept.id)}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDropConcept(concept.id, item.id);
+                                  }}
+                                  onDragEnd={() => {
+                                    setDraggedConceptId(null);
+                                    setDragOverConceptId(null);
+                                  }}
                                   onOpenViewer={() => {
                                     const idx = concepts.findIndex((x) => x.id === concept.id);
                                     setViewerConceptIdx(idx >= 0 ? idx : 0);
@@ -1283,6 +1378,21 @@ export default function ProjectDetailPage() {
                           commentCount={comments.filter((c) => c.conceptId === concept.id).length}
                           selection={selections.find((s) => s.conceptId === concept.id)}
                           isAdmin
+                          isDraggable
+                          isBeingDragged={draggedConceptId === concept.id}
+                          isDragOver={dragOverConceptId === concept.id}
+                          onDragStart={(e) => handleConceptDragStart(e, concept.id)}
+                          onDragOver={(e) => handleConceptDragOver(e, concept.id)}
+                          onDragLeave={(e) => handleConceptDragLeave(e, concept.id)}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDropConcept(concept.id);
+                          }}
+                          onDragEnd={() => {
+                            setDraggedConceptId(null);
+                            setDragOverConceptId(null);
+                          }}
                           onOpenViewer={() => {
                             const idx = concepts.findIndex((x) => x.id === concept.id);
                             setViewerConceptIdx(idx >= 0 ? idx : 0);

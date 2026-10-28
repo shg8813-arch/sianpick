@@ -12,6 +12,7 @@ import {
   Edit,
   Eye,
   Check,
+  GripVertical,
 } from 'lucide-react';
 
 interface ConceptCardProps {
@@ -24,6 +25,14 @@ interface ConceptCardProps {
   isAdmin?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
+  isDraggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
+  isBeingDragged?: boolean;
+  isDragOver?: boolean;
 }
 
 export function ConceptCard({
@@ -36,6 +45,14 @@ export function ConceptCard({
   isAdmin = false,
   onEdit,
   onDelete,
+  isDraggable = false,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+  isBeingDragged = false,
+  isDragOver = false,
 }: ConceptCardProps) {
   const isSelected = Boolean(selection);
   const isFinalApproved = selection?.isFinal || false;
@@ -44,7 +61,17 @@ export function ConceptCard({
 
   return (
     <div
+      draggable={isDraggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
       className={`group relative bg-white shadow-[0_12px_45px_rgba(0,0,0,0.035)] hover:shadow-[0_18px_60px_rgba(0,0,0,0.06)] transition-all duration-300 flex flex-col justify-between overflow-hidden ${
+        isBeingDragged ? 'opacity-40 scale-[0.98]' : 'opacity-100'
+      } ${
+        isDragOver ? 'ring-2 ring-blue-500 bg-blue-50/20' : ''
+      } ${
         isFinalApproved
           ? 'ring-2 ring-emerald-500/50'
           : isSelected
@@ -56,9 +83,19 @@ export function ConceptCard({
         {/* Top Header Section inside card: Folio & Badges */}
         <div className="p-6 sm:p-7 pb-4 flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <span className="text-[10px] font-semibold tracking-[0.2em] text-zinc-400 uppercase block">
-              CONCEPT {String(concept.displayOrder).padStart(2, '0')}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {isDraggable && (
+                <div
+                  className="p-1 -ml-1 text-zinc-300 hover:text-zinc-700 cursor-grab active:cursor-grabbing hover:bg-zinc-100 rounded transition-colors"
+                  title="클릭 후 드래그하여 시안 순서 변경"
+                >
+                  <GripVertical className="w-4 h-4" />
+                </div>
+              )}
+              <span className="text-[10px] font-semibold tracking-[0.2em] text-zinc-400 uppercase block">
+                CONCEPT {String(concept.displayOrder).padStart(2, '0')}
+              </span>
+            </div>
             {concept.title && (
               <h3
                 onClick={onOpenViewer}
