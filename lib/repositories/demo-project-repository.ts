@@ -16,7 +16,6 @@ import {
   StudioProfile,
 } from '@/types';
 import { INITIAL_DEMO_PROJECT, INITIAL_TATTOO_PROJECT, INITIAL_COMPANIES, INITIAL_CONCEPTS, INITIAL_ESTIMATE, INITIAL_STUDIO_PROFILE } from '@/lib/demo/sample-data';
-import { generateUrbanForestSvg } from '@/lib/utils/svg-generator';
 
 const STORAGE_KEY = 'sianpick_projects_store_v8';
 const STORAGE_KEY_V7 = 'sianpick_projects_store_v7';
@@ -33,69 +32,6 @@ const COMPANIES_KEY_V1 = 'sianpick_companies_store_v1';
 const STUDIO_PROFILE_KEY = 'sianpick_studio_profile_v1';
 
 export class DemoProjectRepository implements IProjectRepository {
-  private ensureThreeConceptsPerItem(project: Project): Project {
-    const items = project.designItems || [];
-    let updatedConcepts = [...(project.concepts || [])];
-    let changed = false;
-
-    items.forEach((item) => {
-      const itemConcepts = updatedConcepts.filter((c) => c.itemId === item.id);
-      if (itemConcepts.length < 3) {
-        changed = true;
-        const missingCount = 3 - itemConcepts.length;
-        for (let i = 1; i <= missingCount; i++) {
-          const num = itemConcepts.length + i;
-          let svgType: 'logo-1' | 'logo-2' | 'logo-3' | 'cup-1' | 'cup-2' | 'cup-3' | 'menu-1' | 'menu-2' | 'menu-3' = 'logo-1';
-          if (item.name.includes('로고') || item.name.toLowerCase().includes('logo')) {
-            svgType = num === 2 ? 'logo-2' : num === 3 ? 'logo-3' : 'logo-1';
-          } else if (item.name.includes('컵') || item.name.includes('슬리브') || item.name.toLowerCase().includes('cup')) {
-            svgType = num === 2 ? 'cup-2' : num === 3 ? 'cup-3' : 'cup-1';
-          } else {
-            svgType = num === 2 ? 'menu-2' : num === 3 ? 'menu-3' : 'menu-1';
-          }
-
-          const newConceptId = `concept-${item.id}-${num}-${Date.now()}`;
-          const newSvg = generateUrbanForestSvg(svgType, item.name, `시안 ${num}`);
-          const newConcept: Concept = {
-            id: newConceptId,
-            projectId: project.id,
-            itemId: item.id,
-            title: `시안 ${num} — ${item.name} 비주얼 제안`,
-            description: `어반 포레스트의 감각적인 무드를 반영한 ${item.name}의 ${num}번째 테스트 시안입니다.`,
-            designConcept: `공간과 제품의 일체감을 높이고 미니멀한 브랜드 경험을 제공하도록 그리드를 설계했습니다.`,
-            colorFontDescription: '모노크롬 잉크(#09090B), 클린 화이트(#FFFFFF)',
-            usageRecommendation: '매장 비치 및 패키지 인쇄물 적용',
-            thumbnailUrl: newSvg,
-            displayOrder: num,
-            isPublic: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            versions: [
-              {
-                id: `ver-${newConceptId}-1`,
-                conceptId: newConceptId,
-                versionNumber: 1,
-                imageUrl: newSvg,
-                changeSummary: `시안 ${num} 초기 제안본`,
-                isFinal: false,
-                createdAt: new Date().toISOString(),
-              },
-            ],
-          };
-          updatedConcepts.push(newConcept);
-        }
-      }
-    });
-
-    if (changed) {
-      return {
-        ...project,
-        concepts: updatedConcepts,
-      };
-    }
-    return project;
-  }
-
   private getStorageKey(): string {
     if (typeof window === 'undefined') return STORAGE_KEY;
     try {
@@ -192,7 +128,7 @@ export class DemoProjectRepository implements IProjectRepository {
           }
         }
         projects = projects.map((p) => {
-          const updated = this.ensureThreeConceptsPerItem(p);
+          const updated = { ...p };
           const itemCount = updated.designItems?.length || 1;
           if (p.id === 'demo-project-urbanforest' || p.id === 'demo-project-runofthemill' || p.title.includes('어반 포레스트') || p.title.includes('런오브더밀')) {
             updated.estimate = updated.estimate || INITIAL_ESTIMATE;
@@ -244,9 +180,23 @@ export class DemoProjectRepository implements IProjectRepository {
         }
       }
       
+      // Clean up any previously auto-generated dummy concepts from user-created design items
+      projects = projects.map((p) => {
+        if (p.concepts && p.concepts.some((c) => c.title.includes('비주얼 제안') && c.description?.includes('테스트 시안입니다'))) {
+          modified = true;
+          return {
+            ...p,
+            concepts: p.concepts.filter(
+              (c) => !(c.title.includes('비주얼 제안') && c.description?.includes('테스트 시안입니다'))
+            ),
+          };
+        }
+        return p;
+      });
+
       // Ensure all projects have token counts and estimate
       projects = projects.map((p) => {
-        let updated = this.ensureThreeConceptsPerItem(p);
+        let updated = { ...p };
         const itemCount = updated.designItems?.length || 1;
         if ((p.id === 'demo-project-urbanforest' || p.id === 'demo-project-runofthemill' || p.title.includes('어반 포레스트') || p.title.includes('런오브더밀')) && !updated.estimate) {
           updated = { ...updated, estimate: INITIAL_ESTIMATE };
