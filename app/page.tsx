@@ -83,7 +83,7 @@ export default function HomePage() {
         <p className="mt-8 text-base sm:text-xl text-zinc-600 max-w-3xl mx-auto leading-relaxed font-normal">
           카카오톡과 이메일로 흩어지던 시안 파일과 피드백을 한곳에 정돈하세요.
           <br className="hidden sm:inline" />
-          항목별 3개 시안 나란히 비교, 작업창 방식의 핀포인트 코멘트, 계획적인 수정 토큰 관리,
+          항목별 3개 시안 나란히 비교, 작업창 방식의 실시간 피드백 기록, 계획적인 수정 토큰 관리,
           견적서 연동 및 공식 승인서까지 원스톱으로 지원합니다.
         </p>
 
@@ -125,7 +125,7 @@ export default function HomePage() {
           </div>
           <div className="p-3.5 bg-white border border-zinc-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
             <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">02 FEEDBACK</span>
-            <span className="text-xs font-bold text-zinc-800 mt-1 block">좌표 핀포인트 코멘트</span>
+            <span className="text-xs font-bold text-zinc-800 mt-1 block">작업창 실시간 피드백</span>
           </div>
           <div className="p-3.5 bg-white border border-zinc-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
             <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">03 CONTROL</span>
@@ -201,7 +201,7 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>시안 이미지 위 수정 위치를 직접 클릭하여 작성하는 직관적인 핀포인트 코멘트</span>
+                  <span>선택 시안 하단 작업창에서 일시별로 누적 기록되는 체계적인 피드백 관리</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -256,7 +256,7 @@ export default function HomePage() {
               </span>
               <h3 className="text-lg font-bold text-zinc-900">고객 전용 보안 링크 전달</h3>
               <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed">
-                고객은 로그인 없이 보안 링크로 접속하여 3개 시안을 비교 검토하고, 핀포인트를 찍어 정확한 피드백을 전달합니다.
+                고객은 로그인 없이 보안 링크로 접속하여 3개 시안을 비교 검토하고, 항목별 작업창에 정확한 수정 피드백을 기록합니다.
               </p>
             </div>
             <div className="mt-8 pt-4 border-t border-zinc-100 text-[11px] font-mono text-zinc-400">
@@ -311,9 +311,9 @@ export default function HomePage() {
               <div className="w-10 h-10 bg-zinc-900 text-white flex items-center justify-center shadow-sm">
                 <MessageSquare className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-base font-bold text-zinc-900">작업창 방식 핀포인트 코멘트</h3>
+              <h3 className="text-base font-bold text-zinc-900">작업창 방식 피드백 &amp; 시간순 기록</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">
-                시안 이미지 위 수정 위치를 마우스로 클릭하여 핀포인트 코멘트를 남깁니다. 피드백 작성 일시가 시간순으로 작업창에 기록됩니다.
+                선택하신 시안별 전용 작업창에서 피드백을 작성합니다. 등록 일시가 초 단위까지 시간순으로 기록되어 누락 없이 수정 요구를 관리합니다.
               </p>
             </div>
 
