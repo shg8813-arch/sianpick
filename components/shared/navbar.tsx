@@ -60,16 +60,8 @@ export function Navbar() {
           )}
 
           <Link
-            href="/share/runofthemill-sample-2026"
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-zinc-700 hover:text-zinc-950 px-3 py-1.5 bg-white hover:bg-zinc-50 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-all"
-          >
-            <Share2 className="w-3.5 h-3.5 text-blue-600" />
-            고객 화면 체험
-          </Link>
-
-          <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold bg-zinc-900 text-white hover:bg-zinc-800 px-3.5 py-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.08)] transition-all"
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold bg-zinc-900 text-white hover:bg-zinc-800 px-4 py-2 shadow-[0_2px_10px_rgba(0,0,0,0.08)] transition-all"
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
             관리자 대시보드
