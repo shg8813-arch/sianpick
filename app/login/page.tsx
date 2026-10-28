@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDemoLogin = () => {
-    toast.success('데모 디자이너 계정으로 로그인되었습니다.');
+    toast.success('디자이너 계정으로 로그인되었습니다.');
     router.push('/dashboard');
   };
 
@@ -26,7 +26,7 @@ export default function LoginPage() {
     }
 
     if (!isSupabaseConfigured) {
-      toast.success(`${email} 계정으로 데모 로그인되었습니다.`);
+      toast.success(`${email} 계정으로 로그인되었습니다.`);
       router.push('/dashboard');
       return;
     }
@@ -41,7 +41,7 @@ export default function LoginPage() {
       toast.success('로그인에 성공했습니다.');
       router.push('/dashboard');
     } catch (err: any) {
-      toast.error(err.message || '로그인에 실패했습니다. 데모 모드로 접속해보세요.');
+      toast.error(err.message || '로그인에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -74,21 +74,21 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Demo Mode Quick Access Banner */}
-        <div className="mb-6 p-4 bg-zinc-50 space-y-3 shadow-sm">
+        {/* Quick Access Banner */}
+        <div className="mb-6 p-4 bg-zinc-50 space-y-3 shadow-sm border border-zinc-100">
           <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
             <Sparkles className="w-4 h-4 text-zinc-700" />
-            <span>데모 모드 즉시 체험</span>
+            <span>스튜디오 관리자 즉시 시작</span>
           </div>
           <p className="text-xs text-zinc-500 leading-relaxed">
-            별도의 Supabase 설정 없이 런오브더밀 샘플 프로젝트와 브라우저 로컬 저장소를 통해 즉시 모든 기능을 체험할 수 있습니다.
+            별도의 회원가입 없이 브라우저 저장소를 통해 즉시 프로젝트 관리 및 시안 등록을 시작할 수 있습니다.
           </p>
           <button
             type="button"
             onClick={handleDemoLogin}
             className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs tracking-wide shadow-sm transition-all flex items-center justify-center gap-1.5"
           >
-            <span>데모 계정으로 즉시 시작하기</span>
+            <span>대시보드로 즉시 시작하기</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
