@@ -654,7 +654,7 @@ export class DemoProjectRepository implements IProjectRepository {
 
     const newConceptId = `concept-${Date.now()}`;
     const nextOrder = data.displayOrder ?? ((project.concepts?.length || 0) + 1);
-    const cleanTitle = data.title?.trim() || `시안 0${nextOrder}`;
+    const cleanTitle = data.title?.trim() || '';
 
     const newConcept: Concept = {
       id: newConceptId,

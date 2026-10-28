@@ -226,7 +226,7 @@ export function DragRankingSection({
                 <div className="space-y-0.5 min-w-0 pr-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="text-sm sm:text-base font-bold text-zinc-900 truncate">
-                      {concept.title || `시안 ${concept.displayOrder || idx + 1}`}
+                      {concept.title || `CONCEPT ${String(concept.displayOrder || idx + 1).padStart(2, '0')}`}
                     </h4>
                     {isRank1 && (
                       <span className="px-2 py-0.5 text-[10px] font-semibold text-blue-700 bg-blue-50 flex items-center gap-1">
