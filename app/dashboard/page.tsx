@@ -517,15 +517,15 @@ export default function DashboardPage() {
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 bg-zinc-50 border border-zinc-200">
                   <div
-                    className="px-4 bg-white border border-zinc-200 flex items-center justify-center min-w-[200px] shrink-0 transition-all"
-                    style={{ height: `${Math.max(68, studioLogoHeight + 20)}px` }}
+                    className="px-4 py-2 bg-white border border-zinc-200 flex items-center justify-center min-w-[200px] max-w-[280px] shrink-0 transition-all"
+                    style={{ minHeight: `${Math.max(68, studioLogoHeight + 20)}px` }}
                   >
                     {studioLogoUrl ? (
                       <img
                         src={studioLogoUrl}
                         alt="스튜디오 로고"
                         style={{ height: `${studioLogoHeight}px`, maxHeight: `${studioLogoHeight}px` }}
-                        className="max-w-[200px] object-contain transition-all"
+                        className="max-w-[240px] object-contain transition-all"
                       />
                     ) : (
                       <span className="text-xs text-zinc-400 font-medium">로고 미등록</span>
@@ -582,9 +582,14 @@ export default function DashboardPage() {
                 {/* Logo Size Control Slider & Presets */}
                 <div className="p-4 bg-zinc-50 border border-zinc-200 space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
-                      <span>내 업체 로고 표시 크기 조절 (고객 공유 화면 상단 바)</span>
-                    </label>
+                    <div>
+                      <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
+                        <span>내 업체 로고 표시 크기 조절 (고객 공유 화면 상단 바)</span>
+                      </label>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        설정하신 로고 크기에 맞춰 고객 화면 상단 바 배경 레이아웃의 높이도 자동으로 알맞게 확장됩니다.
+                      </p>
+                    </div>
                     <span className="font-mono text-xs font-bold px-2 py-0.5 bg-white border border-zinc-200 text-zinc-900 rounded">
                       {studioLogoHeight}px
                     </span>
@@ -595,13 +600,13 @@ export default function DashboardPage() {
                     <input
                       type="range"
                       min={20}
-                      max={72}
+                      max={100}
                       step={2}
                       value={studioLogoHeight}
                       onChange={(e) => setStudioLogoHeight(Number(e.target.value))}
                       className="w-full accent-zinc-900 cursor-pointer"
                     />
-                    <span className="text-[11px] text-zinc-400 font-mono">72px</span>
+                    <span className="text-[11px] text-zinc-400 font-mono">100px</span>
                   </div>
 
                   {/* Preset Buttons */}
@@ -610,8 +615,9 @@ export default function DashboardPage() {
                     {[
                       { label: '소형 (28px)', size: 28 },
                       { label: '기본 (36px)', size: 36 },
-                      { label: '중형 (44px)', size: 44 },
-                      { label: '대형 (56px)', size: 56 },
+                      { label: '중형 (48px)', size: 48 },
+                      { label: '대형 (64px)', size: 64 },
+                      { label: '특대 (80px)', size: 80 },
                     ].map((preset) => (
                       <button
                         key={preset.size}

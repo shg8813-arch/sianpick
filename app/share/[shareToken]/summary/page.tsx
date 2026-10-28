@@ -121,7 +121,7 @@ export default function ClientSummaryPage() {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-[12.6px] font-semibold text-white bg-black px-2.5 py-1 shadow-sm">
+                <span className="text-[11.3px] font-semibold text-white bg-black px-2.5 py-0.5 rounded-md shadow-sm">
                   {project.companyName || '고객사'}
                 </span>
                 <span className="text-xs text-zinc-500 font-normal">

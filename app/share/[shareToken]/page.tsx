@@ -228,16 +228,22 @@ export default function ClientSharePage() {
   return (
     <div onContextMenu={(e) => e.preventDefault()} className="min-h-screen flex flex-col bg-[#FBFBFA] pb-24 select-none">
       {/* Client Header */}
-      <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md shadow-[0_2px_16px_rgba(0,0,0,0.03)] border-b border-zinc-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <header
+        className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md shadow-[0_2px_16px_rgba(0,0,0,0.03)] border-b border-zinc-100 transition-all"
+        style={{ minHeight: `${Math.max(64, studioLogoHeight + 20)}px` }}
+      >
+        <div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-2 sm:py-2.5 transition-all"
+          style={{ minHeight: `${Math.max(64, studioLogoHeight + 20)}px` }}
+        >
           {/* Design Studio Company Logo Slot (시안 제공 디자인 업체 로고) */}
-          <div className="flex items-center" style={{ height: `${studioLogoHeight}px` }}>
+          <div className="flex items-center transition-all" style={{ height: `${studioLogoHeight}px` }}>
             {(studioLogo || project.companyLogoUrl) ? (
-              <div className="max-w-[260px] flex items-center" style={{ height: `${studioLogoHeight}px` }}>
+              <div className="max-w-[280px] flex items-center transition-all" style={{ height: `${studioLogoHeight}px` }}>
                 <img
                   src={studioLogo || project.companyLogoUrl}
                   alt="디자인 업체 로고"
-                  className="w-auto object-contain"
+                  className="w-auto object-contain transition-all"
                   style={{ height: `${studioLogoHeight}px`, maxHeight: `${studioLogoHeight}px` }}
                 />
               </div>
@@ -264,7 +270,7 @@ export default function ClientSharePage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 {project.companyName && (
-                  <span className="text-[12.6px] font-semibold text-white bg-black px-2.5 py-1 shadow-sm">
+                  <span className="text-[11.3px] font-semibold text-white bg-black px-2.5 py-0.5 rounded-md shadow-sm">
                     {project.companyName}
                   </span>
                 )}
