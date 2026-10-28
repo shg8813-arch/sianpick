@@ -16,6 +16,7 @@ import {
   StudioProfile,
 } from '@/types';
 import { INITIAL_DEMO_PROJECT, INITIAL_TATTOO_PROJECT, INITIAL_COMPANIES, INITIAL_CONCEPTS, INITIAL_ESTIMATE, INITIAL_STUDIO_PROFILE } from '@/lib/demo/sample-data';
+import { idbGet, idbSet } from '@/lib/utils/idb-storage';
 
 const STORAGE_KEY = 'sianpick_projects_store_v8';
 const STORAGE_KEY_V7 = 'sianpick_projects_store_v7';
@@ -32,6 +33,8 @@ const COMPANIES_KEY_V1 = 'sianpick_companies_store_v1';
 const STUDIO_PROFILE_KEY = 'sianpick_studio_profile_v1';
 
 export class DemoProjectRepository implements IProjectRepository {
+  private memoryCache: Map<string, Project[]> = new Map();
+
   private getStorageKey(): string {
     if (typeof window === 'undefined') return STORAGE_KEY;
     try {
@@ -74,11 +77,26 @@ export class DemoProjectRepository implements IProjectRepository {
     return STUDIO_PROFILE_KEY;
   }
 
+  private async ensureIdbSynced(): Promise<void> {
+    if (typeof window === 'undefined') return;
+    const currentKey = this.getStorageKey();
+    if (this.memoryCache.has(currentKey)) return;
+    try {
+      const idbData = await idbGet<Project[]>(currentKey);
+      if (idbData && Array.isArray(idbData) && idbData.length > 0) {
+        this.memoryCache.set(currentKey, idbData);
+      }
+    } catch {}
+  }
+
   private getStorage(): Project[] {
     if (typeof window === 'undefined') {
       return [INITIAL_DEMO_PROJECT];
     }
     const currentKey = this.getStorageKey();
+    if (this.memoryCache.has(currentKey)) {
+      return this.memoryCache.get(currentKey)!;
+    }
     try {
       let raw = window.localStorage.getItem(currentKey);
       if (!raw) {
@@ -222,6 +240,7 @@ export class DemoProjectRepository implements IProjectRepository {
       if (modified) {
         this.saveStorage(projects);
       }
+      this.memoryCache.set(currentKey, projects);
       return projects;
     } catch (e) {
       console.warn('Failed to read from localStorage, using in-memory demo data', e);
@@ -255,26 +274,25 @@ export class DemoProjectRepository implements IProjectRepository {
     this.cleanupLegacyStorage();
     const currentKey = this.getStorageKey();
 
+    // 1. Immediately update in-memory cache for fast synchronous reads
+    this.memoryCache.set(currentKey, projects);
+
+    // 2. Persist to IndexedDB (asynchronously, with virtually unlimited quota)
+    idbSet(currentKey, projects).catch((e) => {
+      console.warn('IndexedDB persistence warning:', e);
+    });
+
+    // 3. Attempt to sync to localStorage
     try {
       window.localStorage.setItem(currentKey, JSON.stringify(projects));
     } catch (e) {
-      console.warn('Storage save quota warning, attempting emergency cleanup:', e);
+      console.warn('localStorage quota warning (IndexedDB used as primary store):', e);
       try {
-        // Clean up legacy and temporary stores if storage is constrained
-        for (let i = window.localStorage.length - 1; i >= 0; i--) {
-          const k = window.localStorage.key(i);
-          if (
-            k &&
-            k !== currentKey &&
-            (k.startsWith('sianpick_projects_store_') || k.startsWith('sianpick_companies_store_'))
-          ) {
-            window.localStorage.removeItem(k);
-          }
-        }
+        this.cleanupLegacyStorage();
         window.localStorage.setItem(currentKey, JSON.stringify(projects));
       } catch (err) {
-        console.error('Critical: Failed to save to localStorage due to storage limit', err);
-        throw new Error('브라우저 저장 공간이 초과되어 시안을 저장하지 못했습니다.');
+        // If localStorage is full, IndexedDB has already persisted it, so we do not crash
+        console.info('Projects persisted in IndexedDB and in-memory cache successfully.');
       }
     }
   }
@@ -390,15 +408,18 @@ export class DemoProjectRepository implements IProjectRepository {
 
   // Projects
   async getProjects(): Promise<Project[]> {
+    await this.ensureIdbSynced();
     return this.getStorage();
   }
 
   async getProjectsByCompany(companyId: string): Promise<Project[]> {
+    await this.ensureIdbSynced();
     const projects = this.getStorage();
     return projects.filter((p) => p.companyId === companyId);
   }
 
   async getProjectById(id: string): Promise<Project | null> {
+    await this.ensureIdbSynced();
     const projects = this.getStorage();
     let proj = projects.find((p) => p.id === id);
     if (!proj && typeof window !== 'undefined') {
@@ -429,6 +450,7 @@ export class DemoProjectRepository implements IProjectRepository {
   }
 
   async getProjectByShareToken(token: string): Promise<Project | null> {
+    await this.ensureIdbSynced();
     const projects = this.getStorage();
     let proj = projects.find((p) => p.shareToken === token);
     if (!proj && typeof window !== 'undefined') {
@@ -689,6 +711,62 @@ export class DemoProjectRepository implements IProjectRepository {
     project.concepts = [...(project.concepts || []), newConcept];
     this.saveStorage(projects);
     return newConcept;
+  }
+
+  async addConceptsBatch(
+    projectId: string,
+    conceptsData: Array<{
+      itemId?: string;
+      title?: string;
+      description?: string;
+      thumbnailUrl: string;
+      isPublic?: boolean;
+    }>
+  ): Promise<Concept[]> {
+    await this.ensureIdbSynced();
+    const projects = this.getStorage();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+
+    let targetItemId = conceptsData[0]?.itemId;
+    if (!targetItemId && project.designItems && project.designItems.length > 0) {
+      targetItemId = project.designItems[0].id;
+    }
+
+    const currentLength = project.concepts?.length || 0;
+    const now = Date.now();
+    const newConcepts: Concept[] = conceptsData.map((data, idx) => {
+      const newConceptId = `concept-${now}-${idx}-${Math.random().toString(36).substring(2, 6)}`;
+      const nextOrder = currentLength + idx + 1;
+      return {
+        id: newConceptId,
+        projectId,
+        itemId: data.itemId || targetItemId,
+        title: data.title?.trim() || '',
+        description: data.description?.trim(),
+        thumbnailUrl: data.thumbnailUrl,
+        displayOrder: nextOrder,
+        isPublic: data.isPublic ?? true,
+        linkEnabled: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        versions: [
+          {
+            id: `ver-${now}-${idx}`,
+            conceptId: newConceptId,
+            versionNumber: 1,
+            imageUrl: data.thumbnailUrl,
+            changeSummary: '최초 등록 시안',
+            isFinal: false,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      };
+    });
+
+    project.concepts = [...(project.concepts || []), ...newConcepts];
+    this.saveStorage(projects);
+    return newConcepts;
   }
 
   async updateConcept(

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/shared/navbar';
@@ -45,6 +45,9 @@ import {
   GripVertical,
   FileText,
   Coins,
+  UploadCloud,
+  Loader2,
+  Images,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProjectEstimateEditor } from '@/components/projects/project-estimate-editor';
@@ -83,6 +86,12 @@ export default function ProjectDetailPage() {
   // Concept Reorder Drag-and-Drop state
   const [draggedConceptId, setDraggedConceptId] = useState<string | null>(null);
   const [dragOverConceptId, setDragOverConceptId] = useState<string | null>(null);
+
+  // Batch concept upload state
+  const batchFileInputRef = useRef<HTMLInputElement>(null);
+  const [batchTargetItemId, setBatchTargetItemId] = useState<string | null>(null);
+  const [isBatchUploading, setIsBatchUploading] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
 
   // Design Item Creation state (직접 작성, 자동화 버튼 금지)
   const [newItemName, setNewItemName] = useState('');
@@ -233,6 +242,52 @@ export default function ProjectDetailPage() {
     await loadProject();
     setEditingConcept(null);
     setTargetItemIdForConcept(undefined);
+  };
+
+  // Batch Concept Upload handler (사진 여러 장 한 번에 일괄 등록)
+  const handleBatchFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !project) return;
+
+    const imageFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) {
+      toast.error('이미지 파일(JPG, PNG, WebP 등)만 선택해주세요.');
+      return;
+    }
+
+    try {
+      setIsBatchUploading(true);
+      setBatchProgress({ current: 0, total: imageFiles.length });
+
+      const batchConcepts: Array<{
+        itemId: string;
+        thumbnailUrl: string;
+        title: string;
+      }> = [];
+
+      for (let i = 0; i < imageFiles.length; i++) {
+        setBatchProgress({ current: i + 1, total: imageFiles.length });
+        const file = imageFiles[i];
+        const compressed = await compressImage(file, 1600, 1600, 0.82);
+        batchConcepts.push({
+          itemId: batchTargetItemId || (project.designItems?.[0]?.id ?? ''),
+          thumbnailUrl: compressed,
+          title: '',
+        });
+      }
+
+      const repo = getProjectRepository();
+      await repo.addConceptsBatch(project.id, batchConcepts);
+      toast.success(`${imageFiles.length}개의 시안이 성공적으로 일괄 등록되었습니다.`);
+      await loadProject();
+    } catch (err: any) {
+      toast.error('일괄 등록 중 오류가 발생했습니다: ' + (err?.message || ''));
+    } finally {
+      setIsBatchUploading(false);
+      setBatchProgress(null);
+      setBatchTargetItemId(null);
+      if (e.target) e.target.value = '';
+    }
   };
 
   // Reorder Design Items via Drag and Drop
@@ -1061,7 +1116,21 @@ export default function ProjectDetailPage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBatchTargetItemId(item.id);
+                              batchFileInputRef.current?.click();
+                            }}
+                            disabled={isBatchUploading}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold shadow-sm transition-colors disabled:opacity-50"
+                            title="사진 여러 장을 한 번에 선택하여 일괄 등록합니다"
+                          >
+                            <Images className="w-3.5 h-3.5 text-blue-400" />
+                            사진 여러 장 일괄 등록
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => {
@@ -1072,7 +1141,7 @@ export default function ProjectDetailPage() {
                             className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors"
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            이 항목에 시안 추가
+                            시안 개별 추가
                           </button>
 
                           <button
@@ -1185,8 +1254,35 @@ export default function ProjectDetailPage() {
 
                       {/* Concepts Grid for this item */}
                       {itemConcepts.length === 0 ? (
-                        <div className="text-center py-8 text-zinc-400 text-xs">
-                          이 항목에 등록된 시안이 없습니다. 위의 &apos;시안 추가&apos; 버튼을 눌러 시안을 등록하세요.
+                        <div className="text-center py-10 px-4 rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 flex flex-col items-center justify-center gap-3">
+                          <Images className="w-8 h-8 text-zinc-300" />
+                          <p className="text-xs text-zinc-500 font-medium">이 항목에 등록된 시안이 없습니다.</p>
+                          <div className="flex items-center gap-2 flex-wrap justify-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBatchTargetItemId(item.id);
+                                batchFileInputRef.current?.click();
+                              }}
+                              disabled={isBatchUploading}
+                              className="px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                            >
+                              <Images className="w-3.5 h-3.5 text-blue-400" />
+                              사진 여러 장 일괄 등록
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTargetItemIdForConcept(item.id);
+                                setEditingConcept(null);
+                                setIsConceptModalOpen(true);
+                              }}
+                              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center gap-1"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              시안 개별 추가
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1708,6 +1804,29 @@ export default function ProjectDetailPage() {
           </div>
         )}
       </main>
+
+      {/* Hidden input for batch photo upload */}
+      <input
+        ref={batchFileInputRef}
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={handleBatchFilesSelected}
+        className="hidden"
+      />
+
+      {/* Floating progress indicator for batch upload */}
+      {isBatchUploading && batchProgress && (
+        <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-zinc-700 animate-in fade-in slide-in-from-bottom-4">
+          <Loader2 className="w-5 h-5 text-blue-400 animate-spin shrink-0" />
+          <div>
+            <p className="text-xs font-bold">시안 일괄 등록 중...</p>
+            <p className="text-[11px] text-zinc-400">
+              {batchProgress.current} / {batchProgress.total}개 사진 최적화 및 등록 중
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Concept Creation / Edit Modal */}
       <ConceptFormModal

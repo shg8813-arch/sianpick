@@ -147,8 +147,8 @@ export function ConceptFormModal({
       });
       toast.success(initialData ? '시안이 수정되었습니다.' : '새 시안이 성공적으로 등록되었습니다.');
       onClose();
-    } catch {
-      toast.error('시안 저장 중 오류가 발생했습니다.');
+    } catch (err: any) {
+      toast.error(err?.message || '시안 저장 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
     }

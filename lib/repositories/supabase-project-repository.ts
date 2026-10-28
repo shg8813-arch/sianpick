@@ -206,6 +206,19 @@ export class SupabaseProjectRepository implements IProjectRepository {
     return this.fallbackRepo.addConcept(projectId, data);
   }
 
+  async addConceptsBatch(
+    projectId: string,
+    concepts: Array<{
+      itemId?: string;
+      title?: string;
+      description?: string;
+      thumbnailUrl: string;
+      isPublic?: boolean;
+    }>
+  ): Promise<Concept[]> {
+    return this.fallbackRepo.addConceptsBatch(projectId, concepts);
+  }
+
   async updateConcept(projectId: string, conceptId: string, updates: Partial<Concept>): Promise<Concept> {
     return this.fallbackRepo.updateConcept(projectId, conceptId, updates);
   }

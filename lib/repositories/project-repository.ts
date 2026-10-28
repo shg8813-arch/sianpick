@@ -77,6 +77,16 @@ export interface IProjectRepository {
       linkUrl?: string;
     }
   ): Promise<Concept>;
+  addConceptsBatch(
+    projectId: string,
+    concepts: Array<{
+      itemId?: string;
+      title?: string;
+      description?: string;
+      thumbnailUrl: string;
+      isPublic?: boolean;
+    }>
+  ): Promise<Concept[]>;
   updateConcept(projectId: string, conceptId: string, updates: Partial<Concept>): Promise<Concept>;
   deleteConcept(projectId: string, conceptId: string): Promise<void>;
   reorderConcepts(projectId: string, conceptIds: string[]): Promise<void>;
