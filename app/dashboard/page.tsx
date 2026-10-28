@@ -25,13 +25,27 @@ import {
   CheckCircle2,
   Loader2,
   Image as ImageIcon,
+  MessageSquare,
+  Star,
+  User,
+  LogOut,
+  Copy,
+  Check,
+  Tag,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { authService } from '@/lib/auth/auth-service';
+import { feedbackService } from '@/lib/feedback/feedback-service';
+import { UserFeedback, UserProfile } from '@/types';
+import { FeedbackModal } from '@/components/feedback/feedback-modal';
 
 export default function DashboardPage() {
-  const [viewMode, setViewMode] = useState<'projects' | 'companies' | 'studio'>('projects');
+  const [viewMode, setViewMode] = useState<'projects' | 'companies' | 'studio' | 'feedback'>('projects');
   const [projects, setProjects] = useState<Project[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [feedbacks, setFeedbacks] = useState<UserFeedback[]>([]);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -59,6 +73,11 @@ export default function DashboardPage() {
   const loadData = async () => {
     try {
       setIsLoading(true);
+      const user = authService.getCurrentUser();
+      setCurrentUser(user);
+      const loadedFeedbacks = feedbackService.getFeedbacks();
+      setFeedbacks(loadedFeedbacks);
+
       const repo = getProjectRepository();
       const [projList, compList, profile] = await Promise.all([
         repo.getProjects(),
@@ -69,13 +88,13 @@ export default function DashboardPage() {
       setCompanies(compList);
       setStudioProfile(profile);
       if (profile) {
-        setStudioName(profile.studioName || '');
+        setStudioName(profile.studioName || (user?.studioName || ''));
         setStudioLogoUrl(profile.logoUrl || '');
         setStudioLogoHeight(profile.logoHeight || 36);
-        setStudioRepresentative(profile.representative || '');
+        setStudioRepresentative(profile.representative || (user?.name || ''));
         setStudioRegistrationNumber(profile.registrationNumber || '');
         setStudioContact(profile.contact || '');
-        setStudioEmail(profile.email || '');
+        setStudioEmail(profile.email || (user?.email || ''));
         setStudioAddress(profile.address || '');
         setStudioBankAccount(profile.bankAccount || '');
       }
@@ -84,6 +103,24 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleToggleFeedbackStatus = (id: string, currentStatus?: string) => {
+    const nextStatus = currentStatus === 'reviewed' ? 'new' : 'reviewed';
+    feedbackService.updateStatus(id, nextStatus);
+    setFeedbacks(feedbackService.getFeedbacks());
+    toast.success(nextStatus === 'reviewed' ? '확인 완료 처리되었습니다.' : '신규 상태로 전환되었습니다.');
+  };
+
+  const handleDeleteFeedback = (id: string) => {
+    feedbackService.deleteFeedback(id);
+    setFeedbacks(feedbackService.getFeedbacks());
+    toast.success('피드백이 삭제되었습니다.');
+  };
+
+  const handleCopyFeedbacksJson = () => {
+    navigator.clipboard.writeText(JSON.stringify(feedbacks, null, 2));
+    toast.success('전체 피드백 데이터가 클립보드에 JSON 형식으로 복사되었습니다.');
   };
 
   useEffect(() => {
@@ -214,8 +251,16 @@ export default function DashboardPage() {
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">
-              DESIGN STUDIO MANAGEMENT
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">
+                DESIGN STUDIO MANAGEMENT
+              </span>
+              {currentUser && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 bg-zinc-100 text-zinc-800 rounded-sm">
+                  <User className="w-3 h-3 text-zinc-500" />
+                  <span>{currentUser.studioName || currentUser.name} ({currentUser.email})</span>
+                </span>
+              )}
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight mt-1">
               디자이너 대시보드
@@ -225,14 +270,24 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsFeedbackModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white text-zinc-700 text-xs sm:text-sm font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.035)] hover:bg-zinc-50 border border-zinc-200 transition-all"
+              title="사이트 개선 및 기능 요청 피드백 보내기"
+            >
+              <MessageSquare className="w-4 h-4 text-amber-500" />
+              <span>피드백 남기기</span>
+            </button>
+
             <button
               type="button"
               onClick={() => {
                 setEditingCompany(null);
                 setIsCompanyModalOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white text-zinc-800 text-xs sm:text-sm font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.035)] hover:bg-zinc-50 transition-all"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white text-zinc-800 text-xs sm:text-sm font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.035)] hover:bg-zinc-50 border border-zinc-200 transition-all"
             >
               <Building2 className="w-4 h-4 text-blue-600" />
               새 업체 등록
@@ -249,11 +304,11 @@ export default function DashboardPage() {
         </div>
 
         {/* View Switcher Pills */}
-        <div className="flex items-center gap-2 border-b border-zinc-100 pb-2">
+        <div className="flex items-center gap-2 border-b border-zinc-100 pb-2 overflow-x-auto">
           <button
             type="button"
             onClick={() => setViewMode('projects')}
-            className={`px-4 py-2 text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
               viewMode === 'projects'
                 ? 'bg-zinc-200 text-zinc-900 shadow-sm font-bold border border-zinc-300'
                 : 'text-zinc-600 hover:text-zinc-900 hover:bg-white'
@@ -266,7 +321,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => setViewMode('companies')}
-            className={`px-4 py-2 text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
               viewMode === 'companies'
                 ? 'bg-zinc-200 text-zinc-900 shadow-sm font-bold border border-zinc-300'
                 : 'text-zinc-600 hover:text-zinc-900 hover:bg-white'
@@ -279,7 +334,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => setViewMode('studio')}
-            className={`px-4 py-2 text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
               viewMode === 'studio'
                 ? 'bg-zinc-200 text-zinc-900 shadow-sm font-bold border border-zinc-300'
                 : 'text-zinc-600 hover:text-zinc-900 hover:bg-white'
@@ -288,13 +343,26 @@ export default function DashboardPage() {
             <Settings className="w-4 h-4" />
             <span>스튜디오 및 공급자 설정</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('feedback')}
+            className={`px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+              viewMode === 'feedback'
+                ? 'bg-zinc-200 text-zinc-900 shadow-sm font-bold border border-zinc-300'
+                : 'text-zinc-600 hover:text-zinc-900 hover:bg-white'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4 text-amber-600" />
+            <span>수신 피드백함 ({feedbacks.length})</span>
+          </button>
         </div>
 
         {/* Stats Metrics (Only on Projects and Companies view) */}
-        {viewMode !== 'studio' && <StatsCards projects={projects} />}
+        {viewMode !== 'studio' && viewMode !== 'feedback' && <StatsCards projects={projects} />}
 
         {/* Search & Filter Bar (Only on Projects and Companies view) */}
-        {viewMode !== 'studio' && (
+        {viewMode !== 'studio' && viewMode !== 'feedback' && (
           <div className="bg-white p-4 shadow-[0_2px_14px_rgba(0,0,0,0.03)] flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="relative w-full md:w-80">
               <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -761,9 +829,203 @@ export default function DashboardPage() {
             </form>
           </div>
         )}
+
+        {/* Feedback Inbox Panel */}
+        {viewMode === 'feedback' && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.035)] border border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-400 font-bold block">
+                  CUSTOMER FEEDBACK INBOX
+                </span>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 mt-0.5">
+                  디자이너 고객 피드백 수신함
+                </h2>
+                <p className="text-xs text-zinc-500 mt-1">
+                  사이트를 방문한 예비 고객 디자이너들이 남긴 기능 제안, 사용 후기, 버그 제보를 모아서 확인합니다.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyFeedbacksJson}
+                  className="px-3.5 py-2 bg-white hover:bg-zinc-100 border border-zinc-200 text-xs font-semibold text-zinc-800 flex items-center gap-1.5 shadow-sm transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5 text-zinc-600" />
+                  <span>JSON 복사</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFeedbackModalOpen(true)}
+                  className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-white" />
+                  <span>직접 피드백 추가</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Metrics cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-5 bg-white border border-zinc-100 shadow-sm">
+                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest block">TOTAL</span>
+                <span className="text-xs font-semibold text-zinc-700">전체 접수 피드백</span>
+                <p className="text-2xl sm:text-3xl font-extrabold text-zinc-900 mt-1">{feedbacks.length}건</p>
+              </div>
+              <div className="p-5 bg-white border border-zinc-100 shadow-sm">
+                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest block">RATING</span>
+                <span className="text-xs font-semibold text-zinc-700">평균 만족도</span>
+                <p className="text-2xl sm:text-3xl font-extrabold text-zinc-900 mt-1">
+                  {feedbacks.length > 0
+                    ? (feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length).toFixed(1)
+                    : '5.0'} / 5.0
+                </p>
+              </div>
+              <div className="p-5 bg-white border border-zinc-100 shadow-sm">
+                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest block">FEATURE</span>
+                <span className="text-xs font-semibold text-zinc-700">기능 제안</span>
+                <p className="text-2xl sm:text-3xl font-extrabold text-blue-700 mt-1">
+                  {feedbacks.filter((f) => f.category === 'feature').length}건
+                </p>
+              </div>
+              <div className="p-5 bg-white border border-zinc-100 shadow-sm">
+                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest block">UNREVIEWED</span>
+                <span className="text-xs font-semibold text-zinc-700">미확인 신규 피드백</span>
+                <p className="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-1">
+                  {feedbacks.filter((f) => f.status === 'new').length}건
+                </p>
+              </div>
+            </div>
+
+            {/* Feedback List */}
+            {feedbacks.length === 0 ? (
+              <div className="p-16 text-center bg-white border border-zinc-100 shadow-sm space-y-3">
+                <MessageSquare className="w-10 h-10 text-zinc-300 mx-auto" />
+                <h3 className="text-base font-bold text-zinc-800">아직 수신된 피드백이 없습니다</h3>
+                <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                  메인 화면과 대시보드 상단의 [피드백 남기기]를 통해 예비 고객 디자이너의 의견을 접수받을 수 있습니다.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {feedbacks.map((fb) => (
+                  <div
+                    key={fb.id}
+                    className="p-6 bg-white border border-zinc-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.02)] space-y-4 hover:border-zinc-300 transition-colors"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`text-xs font-bold px-2.5 py-0.5 rounded-sm ${
+                            fb.category === 'feature'
+                              ? 'bg-blue-100 text-blue-800'
+                              : fb.category === 'bug'
+                              ? 'bg-rose-100 text-rose-800'
+                              : fb.category === 'review'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : fb.category === 'improvement'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-zinc-100 text-zinc-800'
+                          }`}
+                        >
+                          {fb.category === 'feature'
+                            ? '기능 제안'
+                            : fb.category === 'bug'
+                            ? '버그 제보'
+                            : fb.category === 'review'
+                            ? '응원 및 후기'
+                            : fb.category === 'improvement'
+                            ? '사용성 개선'
+                            : '기타 문의'}
+                        </span>
+
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-3.5 h-3.5 ${
+                                s <= fb.rating
+                                  ? 'fill-amber-400 text-amber-500'
+                                  : 'fill-zinc-100 text-zinc-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+
+                        <span
+                          className={`text-[10px] font-bold px-1.5 py-0.2 ${
+                            fb.status === 'reviewed'
+                              ? 'bg-zinc-200 text-zinc-700'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {fb.status === 'reviewed' ? '확인 완료' : '신규 접수'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono">
+                        <span>{new Date(fb.createdAt).toLocaleString('ko-KR')}</span>
+                      </div>
+                    </div>
+
+                    {/* Author info */}
+                    <div className="flex items-center gap-3 text-xs text-zinc-600 flex-wrap">
+                      <div className="flex items-center gap-1 font-semibold text-zinc-900">
+                        <User className="w-3.5 h-3.5 text-zinc-500" />
+                        <span>{fb.authorName}</span>
+                        {fb.studioName && (
+                          <span className="text-zinc-500 font-normal">({fb.studioName})</span>
+                        )}
+                      </div>
+
+                      <a
+                        href={`mailto:${fb.authorEmail}`}
+                        className="flex items-center gap-1 text-blue-600 hover:underline font-mono"
+                      >
+                        <Mail className="w-3 h-3" />
+                        <span>{fb.authorEmail}</span>
+                      </a>
+                    </div>
+
+                    {/* Content */}
+                    <p className="text-xs sm:text-sm text-zinc-800 whitespace-pre-wrap leading-relaxed bg-zinc-50 p-4 border border-zinc-100">
+                      {fb.content}
+                    </p>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFeedbackStatus(fb.id, fb.status)}
+                        className="px-3 py-1.5 text-xs font-semibold bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 transition-colors"
+                      >
+                        {fb.status === 'reviewed' ? '신규 상태로 전환' : '확인 완료 표시'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteFeedback(fb.id)}
+                        className="px-3 py-1.5 text-xs font-semibold bg-white hover:bg-rose-50 border border-zinc-200 text-rose-600 transition-colors"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Modals */}
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => {
+          setIsFeedbackModalOpen(false);
+          setFeedbacks(feedbackService.getFeedbacks());
+        }}
+      />
       <CompanyFormModal
         isOpen={isCompanyModalOpen}
         onClose={() => {

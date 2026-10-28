@@ -96,14 +96,84 @@ export class DemoProjectRepository implements IProjectRepository {
     return project;
   }
 
+  private getStorageKey(): string {
+    if (typeof window === 'undefined') return STORAGE_KEY;
+    try {
+      const userStr = window.localStorage.getItem('sianpick_current_user_session');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user && user.id && user.id !== 'demo-designer') {
+          return `sianpick_projects_${user.id}_v8`;
+        }
+      }
+    } catch {}
+    return STORAGE_KEY;
+  }
+
+  private getCompaniesKey(): string {
+    if (typeof window === 'undefined') return COMPANIES_KEY;
+    try {
+      const userStr = window.localStorage.getItem('sianpick_current_user_session');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user && user.id && user.id !== 'demo-designer') {
+          return `sianpick_companies_${user.id}_v4`;
+        }
+      }
+    } catch {}
+    return COMPANIES_KEY;
+  }
+
+  private getStudioProfileKey(): string {
+    if (typeof window === 'undefined') return STUDIO_PROFILE_KEY;
+    try {
+      const userStr = window.localStorage.getItem('sianpick_current_user_session');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user && user.id && user.id !== 'demo-designer') {
+          return `sianpick_studio_profile_${user.id}_v1`;
+        }
+      }
+    } catch {}
+    return STUDIO_PROFILE_KEY;
+  }
+
   private getStorage(): Project[] {
     if (typeof window === 'undefined') {
       return [INITIAL_DEMO_PROJECT];
     }
+    const currentKey = this.getStorageKey();
     try {
-      let raw = window.localStorage.getItem(STORAGE_KEY);
+      let raw = window.localStorage.getItem(currentKey);
       if (!raw) {
-        // Check if v4, v3, v2 or v1 existed and migrate custom projects
+        // If this is a specific user key that doesn't exist yet, seed with their initial sample project
+        if (currentKey !== STORAGE_KEY) {
+          const userStr = window.localStorage.getItem('sianpick_current_user_session');
+          let studioName = '내 디자인 스튜디오';
+          let designerName = '디자이너';
+          if (userStr) {
+            try {
+              const u = JSON.parse(userStr);
+              if (u.studioName) studioName = u.studioName;
+              if (u.name) designerName = u.name;
+            } catch {}
+          }
+          const userInitialProject: Project = {
+            ...INITIAL_DEMO_PROJECT,
+            id: `proj-${Date.now()}`,
+            title: `${studioName} 첫 시안 프로젝트`,
+            clientName: `${designerName} 고객사`,
+            companyName: `${designerName} 파트너스`,
+            shareToken: `share-${Math.random().toString(36).substring(2, 10)}`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          const userProjects = [userInitialProject];
+          window.localStorage.setItem(currentKey, JSON.stringify(userProjects));
+          return userProjects;
+        }
+
+        // Default legacy migration for demo
         const prevRaw =
           window.localStorage.getItem(STORAGE_KEY_V4) ||
           window.localStorage.getItem(STORAGE_KEY_V3) ||
@@ -140,12 +210,14 @@ export class DemoProjectRepository implements IProjectRepository {
       }
 
       let projects: Project[] = JSON.parse(raw);
-      // Ensure INITIAL_DEMO_PROJECT is present or updated if needed
-      const hasRunOfTheMill = projects.some(
-        (p) => p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')
-      );
-      if (!hasRunOfTheMill) {
-        projects.unshift(INITIAL_DEMO_PROJECT);
+      // Ensure INITIAL_DEMO_PROJECT is present or updated if needed in demo mode
+      if (currentKey === STORAGE_KEY) {
+        const hasRunOfTheMill = projects.some(
+          (p) => p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')
+        );
+        if (!hasRunOfTheMill) {
+          projects.unshift(INITIAL_DEMO_PROJECT);
+        }
       }
       
       // Ensure all projects have token counts and estimate
@@ -187,7 +259,33 @@ export class DemoProjectRepository implements IProjectRepository {
   private saveStorage(projects: Project[]): void {
     if (typeof window === 'undefined') return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+      const currentKey = this.getStorageKey();
+      window.localStorage.setItem(currentKey, JSON.stringify(projects));
+
+      // Also propagate updates to any specific user store containing the same project ID
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith('sianpick_projects_') && k !== currentKey) {
+          const raw = window.localStorage.getItem(k);
+          if (raw) {
+            try {
+              const list: Project[] = JSON.parse(raw);
+              let hasMatch = false;
+              const updatedList = list.map((lp) => {
+                const match = projects.find((p) => p.id === lp.id);
+                if (match) {
+                  hasMatch = true;
+                  return match;
+                }
+                return lp;
+              });
+              if (hasMatch) {
+                window.localStorage.setItem(k, JSON.stringify(updatedList));
+              }
+            } catch {}
+          }
+        }
+      }
     } catch (e) {
       console.error('Failed to save to localStorage', e);
     }
@@ -197,16 +295,17 @@ export class DemoProjectRepository implements IProjectRepository {
     if (typeof window === 'undefined') {
       return INITIAL_COMPANIES;
     }
+    const currentKey = this.getCompaniesKey();
     try {
-      const item = window.localStorage.getItem(COMPANIES_KEY);
+      const item = window.localStorage.getItem(currentKey);
       if (!item) {
-        window.localStorage.setItem(COMPANIES_KEY, JSON.stringify(INITIAL_COMPANIES));
+        window.localStorage.setItem(currentKey, JSON.stringify(INITIAL_COMPANIES));
         return INITIAL_COMPANIES;
       }
       const list: Company[] = JSON.parse(item);
-      if (!list.some((c) => c.id === 'company-runofthemill' || c.name.includes('런오브더밀'))) {
+      if (currentKey === COMPANIES_KEY && !list.some((c) => c.id === 'company-runofthemill' || c.name.includes('런오브더밀'))) {
         const merged = [...INITIAL_COMPANIES, ...list.filter((c) => c.id !== 'company-lumiere')];
-        window.localStorage.setItem(COMPANIES_KEY, JSON.stringify(merged));
+        window.localStorage.setItem(currentKey, JSON.stringify(merged));
         return merged;
       }
       return list;
@@ -218,7 +317,7 @@ export class DemoProjectRepository implements IProjectRepository {
   private saveCompaniesStorage(companies: Company[]): void {
     if (typeof window === 'undefined') return;
     try {
-      window.localStorage.setItem(COMPANIES_KEY, JSON.stringify(companies));
+      window.localStorage.setItem(this.getCompaniesKey(), JSON.stringify(companies));
     } catch (e) {
       console.error('Failed to save companies to localStorage', e);
     }
@@ -296,6 +395,24 @@ export class DemoProjectRepository implements IProjectRepository {
   async getProjectById(id: string): Promise<Project | null> {
     const projects = this.getStorage();
     let proj = projects.find((p) => p.id === id);
+    if (!proj && typeof window !== 'undefined') {
+      try {
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const k = window.localStorage.key(i);
+          if (k && k.startsWith('sianpick_projects_') && k !== this.getStorageKey()) {
+            const raw = window.localStorage.getItem(k);
+            if (raw) {
+              const list: Project[] = JSON.parse(raw);
+              const found = list.find((p) => p.id === id);
+              if (found) {
+                proj = found;
+                break;
+              }
+            }
+          }
+        }
+      } catch {}
+    }
     if (!proj && (id === 'sample-urban-roasters' || id === 'demo-project-lumiere' || id === 'demo-project-runofthemill')) {
       proj = projects.find((p) => p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')) || projects[0] || null;
     }
@@ -305,6 +422,24 @@ export class DemoProjectRepository implements IProjectRepository {
   async getProjectByShareToken(token: string): Promise<Project | null> {
     const projects = this.getStorage();
     let proj = projects.find((p) => p.shareToken === token);
+    if (!proj && typeof window !== 'undefined') {
+      try {
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const k = window.localStorage.key(i);
+          if (k && k.startsWith('sianpick_projects_') && k !== this.getStorageKey()) {
+            const raw = window.localStorage.getItem(k);
+            if (raw) {
+              const list: Project[] = JSON.parse(raw);
+              const found = list.find((p) => p.shareToken === token);
+              if (found) {
+                proj = found;
+                break;
+              }
+            }
+          }
+        }
+      } catch {}
+    }
     if (!proj && (token === 'runofthemill-sample-2026' || token === 'lumiere-sample-2026' || token === 'share-urban-sample-01')) {
       proj = projects.find((p) => p.id === 'demo-project-runofthemill' || p.title.includes('런오브더밀')) || projects[0] || null;
     }
@@ -1009,13 +1144,29 @@ export class DemoProjectRepository implements IProjectRepository {
   // Studio Profile Management (대시보드 메인에서 관리되는 로고 & 견적 공급자 정보)
   async getStudioProfile(): Promise<StudioProfile> {
     if (typeof window === 'undefined') return INITIAL_STUDIO_PROFILE;
+    const key = this.getStudioProfileKey();
     try {
-      const stored = localStorage.getItem(STUDIO_PROFILE_KEY);
+      const stored = localStorage.getItem(key);
       if (stored) {
         return JSON.parse(stored);
       }
-      localStorage.setItem(STUDIO_PROFILE_KEY, JSON.stringify(INITIAL_STUDIO_PROFILE));
-      return INITIAL_STUDIO_PROFILE;
+      const userStr = localStorage.getItem('sianpick_current_user_session');
+      let defaultStudioName = INITIAL_STUDIO_PROFILE.studioName;
+      let defaultRep = INITIAL_STUDIO_PROFILE.representative;
+      if (userStr) {
+        try {
+          const u = JSON.parse(userStr);
+          if (u.studioName) defaultStudioName = u.studioName;
+          if (u.name) defaultRep = u.name;
+        } catch {}
+      }
+      const initialProfile = {
+        ...INITIAL_STUDIO_PROFILE,
+        studioName: defaultStudioName,
+        representative: defaultRep,
+      };
+      localStorage.setItem(key, JSON.stringify(initialProfile));
+      return initialProfile;
     } catch {
       return INITIAL_STUDIO_PROFILE;
     }
@@ -1023,6 +1174,7 @@ export class DemoProjectRepository implements IProjectRepository {
 
   async updateStudioProfile(updates: Partial<StudioProfile>): Promise<StudioProfile> {
     const current = await this.getStudioProfile();
+    const key = this.getStudioProfileKey();
     const updated: StudioProfile = {
       ...current,
       ...updates,
@@ -1030,13 +1182,13 @@ export class DemoProjectRepository implements IProjectRepository {
     };
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(STUDIO_PROFILE_KEY, JSON.stringify(updated));
+        localStorage.setItem(key, JSON.stringify(updated));
       } catch (err) {
         console.error('Failed to save studio profile', err);
       }
     }
 
-    // If logo or logoHeight was updated, synchronize to all projects
+    // If logo or logoHeight was updated, synchronize to all projects in this storage
     if (updates.logoUrl !== undefined || updates.logoHeight !== undefined) {
       const projects = this.getStorage();
       projects.forEach((p) => {

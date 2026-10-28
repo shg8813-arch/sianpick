@@ -35,6 +35,20 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export type FeedbackCategory = 'feature' | 'improvement' | 'bug' | 'review' | 'other';
+
+export interface UserFeedback {
+  id: string;
+  category: FeedbackCategory;
+  rating: number; // 1 ~ 5
+  authorName: string;
+  authorEmail: string;
+  studioName?: string;
+  content: string;
+  createdAt: string;
+  status?: 'new' | 'reviewed' | 'resolved';
+}
+
 export interface StudioProfile {
   studioName: string; // 디자인 업체 / 스튜디오 상호명
   logoUrl?: string; // 디자인 업체 로고 이미지 URL (고객 페이지 상단 노출)
