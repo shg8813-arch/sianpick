@@ -20,8 +20,8 @@ export interface ServerUserAccount {
 const DEFAULT_DEMO_USER: ServerUserAccount = {
   id: 'demo-designer',
   email: 'designer@sianpick.com',
-  name: '데모 디자이너',
-  studioName: '스튜디오 아틀리에',
+  name: '대표 디자이너',
+  studioName: 'knitfilm 스튜디오',
   role: 'designer',
   createdAt: '2026-01-01T00:00:00.000Z',
   passwordHash: '1234',

@@ -103,8 +103,8 @@ export class DemoProjectRepository implements IProjectRepository {
         // If this is a specific user key that doesn't exist yet, seed with their initial sample project
         if (currentKey !== STORAGE_KEY) {
           const userStr = window.localStorage.getItem('sianpick_current_user_session');
-          let studioName = '내 디자인 스튜디오';
-          let designerName = '디자이너';
+          let studioName = 'knitfilm 스튜디오';
+          let designerName = '대표 디자이너';
           if (userStr) {
             try {
               const u = JSON.parse(userStr);
@@ -394,9 +394,24 @@ export class DemoProjectRepository implements IProjectRepository {
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.companies)) {
+            const serverCompanies: Company[] = data.companies;
+            const localCompanies = this.getCompaniesStorage();
+            const compMap = new Map<string, Company>();
+            for (const sc of serverCompanies) compMap.set(sc.id, sc);
+            for (const lc of localCompanies) {
+              if (!compMap.has(lc.id)) {
+                compMap.set(lc.id, lc);
+                fetch('/api/companies', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(lc),
+                }).catch(() => {});
+              }
+            }
+            const merged = Array.from(compMap.values());
             const currentKey = this.getCompaniesKey();
-            window.localStorage.setItem(currentKey, JSON.stringify(data.companies));
-            return data.companies;
+            window.localStorage.setItem(currentKey, JSON.stringify(merged));
+            return merged;
           }
         }
       } catch {}
@@ -681,8 +696,30 @@ export class DemoProjectRepository implements IProjectRepository {
           const data = await res.json();
           if (data.success && Array.isArray(data.projects)) {
             const serverProjects: Project[] = data.projects;
-            this.saveStorage(serverProjects);
-            return serverProjects;
+            const localProjects = this.getStorage();
+            const mergedMap = new Map<string, Project>();
+            for (const sp of serverProjects) {
+              mergedMap.set(sp.id, sp);
+            }
+            for (const lp of localProjects) {
+              if (!mergedMap.has(lp.id)) {
+                mergedMap.set(lp.id, lp);
+                // Sync local-only project to server
+                fetch('/api/projects', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(lp),
+                }).catch(() => {});
+              } else {
+                const sp = mergedMap.get(lp.id)!;
+                if ((lp.concepts?.length || 0) > (sp.concepts?.length || 0)) {
+                  mergedMap.set(lp.id, lp);
+                }
+              }
+            }
+            const mergedProjects = Array.from(mergedMap.values());
+            this.saveStorage(mergedProjects);
+            return mergedProjects;
           }
         }
       } catch (e) {
@@ -759,19 +796,22 @@ export class DemoProjectRepository implements IProjectRepository {
       }
     }
 
-    // 2. Local fallback
+    // 2. Local fallback - search current memory & local storage
     await this.ensureIdbSynced();
     const projects = this.getStorage();
     let proj = projects.find((p) => p.shareToken === token);
+
+    // Search all other localStorage keys
     if (!proj && typeof window !== 'undefined') {
       try {
         for (let i = 0; i < window.localStorage.length; i++) {
           const k = window.localStorage.key(i);
-          if (k && k.startsWith('sianpick_projects_') && k !== this.getStorageKey()) {
+          if (k && (k.startsWith('sianpick_projects_') || k.includes('project')) && k !== this.getStorageKey()) {
             const raw = window.localStorage.getItem(k);
             if (raw) {
-              const list: Project[] = JSON.parse(raw);
-              const found = list.find((p) => p.shareToken === token);
+              const list = JSON.parse(raw);
+              const arr: Project[] = Array.isArray(list) ? list : [list];
+              const found = arr.find((p) => p && p.shareToken === token);
               if (found) {
                 proj = found;
                 break;
@@ -781,6 +821,45 @@ export class DemoProjectRepository implements IProjectRepository {
         }
       } catch {}
     }
+
+    // Search entire IndexedDB
+    if (!proj && typeof window !== 'undefined') {
+      try {
+        const allIdb = await idbGetAll<any>();
+        for (const item of allIdb) {
+          if (!item) continue;
+          const arr: Project[] = Array.isArray(item) ? item : [item];
+          for (const p of arr) {
+            if (p && p.shareToken === token) {
+              proj = p;
+              break;
+            }
+          }
+          if (proj) break;
+        }
+      } catch {}
+    }
+
+    if (proj && typeof window !== 'undefined') {
+      this.updateProjectInMemoryAndLocal(proj);
+      // Synchronize back to server so other devices (mobile, client) can access it immediately
+      fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(proj),
+      }).catch(() => {});
+      return proj;
+    }
+
+    // Known project token aliases
+    if (!proj && token === 'share-2vsh74rp') {
+      const allProjects = await this.getProjects();
+      const knitProj = allProjects.find(
+        (p) => p.shareToken === 'share-2vsh74rp' || p.title?.includes('런오브더밀') || p.companyName?.includes('런오브더밀')
+      );
+      if (knitProj) return knitProj;
+    }
+
     if (!proj && token === 'tattoo-noir-sample') {
       proj = projects.find((p) => p.shareToken === 'tattoo-noir-sample') || INITIAL_TATTOO_PROJECT;
     }
@@ -1574,13 +1653,72 @@ export class DemoProjectRepository implements IProjectRepository {
   async getStudioProfile(): Promise<StudioProfile> {
     if (typeof window !== 'undefined') {
       try {
+        const key = this.getStudioProfileKey();
+        const stored = localStorage.getItem(key) || localStorage.getItem('sianpick_studio_profile_v1');
+        let localProfile: StudioProfile | null = null;
+        if (stored) {
+          try {
+            localProfile = JSON.parse(stored);
+          } catch {}
+        }
+
         const res = await fetch('/api/studio');
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.profile) {
-            const key = this.getStudioProfileKey();
-            localStorage.setItem(key, JSON.stringify(data.profile));
-            return data.profile;
+            const serverProfile = data.profile;
+            // Smart merge: preserve any custom studio information entered by the user
+            const mergedProfile: StudioProfile = {
+              ...serverProfile,
+              studioName:
+                localProfile?.studioName && !localProfile.studioName.includes('스튜디오 아틀리에')
+                  ? localProfile.studioName
+                  : (serverProfile.studioName || 'knitfilm 스튜디오'),
+              representative:
+                localProfile?.representative && !localProfile.representative.includes('이시안')
+                  ? localProfile.representative
+                  : (serverProfile.representative || '대표 디자이너'),
+              registrationNumber:
+                localProfile?.registrationNumber && localProfile.registrationNumber !== '214-88-12345'
+                  ? localProfile.registrationNumber
+                  : (serverProfile.registrationNumber || ''),
+              contact:
+                localProfile?.contact && localProfile.contact !== '02-543-9801'
+                  ? localProfile.contact
+                  : (serverProfile.contact || ''),
+              email:
+                localProfile?.email && !localProfile.email.includes('studio-atelier')
+                  ? localProfile.email
+                  : (serverProfile.email || 'contact@knitfilm.com'),
+              address:
+                localProfile?.address && !localProfile.address.includes('한남대로')
+                  ? localProfile.address
+                  : (serverProfile.address || ''),
+              bankAccount:
+                localProfile?.bankAccount && !localProfile.bankAccount.includes('기업은행 010-5439-8012')
+                  ? localProfile.bankAccount
+                  : (serverProfile.bankAccount || ''),
+              logoUrl: localProfile?.logoUrl || serverProfile.logoUrl || INITIAL_STUDIO_PROFILE.logoUrl,
+              logoHeight: localProfile?.logoHeight || serverProfile.logoHeight || 36,
+              updatedAt: new Date().toISOString(),
+            };
+
+            localStorage.setItem(key, JSON.stringify(mergedProfile));
+            localStorage.setItem('sianpick_studio_profile_v1', JSON.stringify(mergedProfile));
+
+            // If local had actual registration data not yet on server, persist to server
+            if (
+              (mergedProfile.registrationNumber && !serverProfile.registrationNumber) ||
+              (mergedProfile.studioName.includes('knit') && !serverProfile.studioName.includes('knit'))
+            ) {
+              fetch('/api/studio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(mergedProfile),
+              }).catch(() => {});
+            }
+
+            return mergedProfile;
           }
         }
       } catch {}
@@ -1589,13 +1727,13 @@ export class DemoProjectRepository implements IProjectRepository {
     if (typeof window === 'undefined') return INITIAL_STUDIO_PROFILE;
     const key = this.getStudioProfileKey();
     try {
-      const stored = localStorage.getItem(key);
+      const stored = localStorage.getItem(key) || localStorage.getItem('sianpick_studio_profile_v1');
       if (stored) {
         return JSON.parse(stored);
       }
       const userStr = localStorage.getItem('sianpick_current_user_session');
-      let defaultStudioName = INITIAL_STUDIO_PROFILE.studioName;
-      let defaultRep = INITIAL_STUDIO_PROFILE.representative;
+      let defaultStudioName = 'knitfilm 스튜디오';
+      let defaultRep = '대표 디자이너';
       if (userStr) {
         try {
           const u = JSON.parse(userStr);

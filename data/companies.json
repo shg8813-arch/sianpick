@@ -1,5 +1,15 @@
 [
   {
+    "id": "company-runofthemill",
+    "name": "런 오브 더 밀",
+    "contactPerson": "김밀 대표",
+    "email": "client@runofthemill.kr",
+    "phone": "010-8421-5502",
+    "memo": "런오브더밀 제주점 브랜딩 및 전용 디자인 시안 프로젝트",
+    "createdAt": "2026-10-25T09:00:00Z",
+    "updatedAt": "2026-10-29T08:00:00Z"
+  },
+  {
     "id": "company-urbanforest",
     "name": "어반 포레스트",
     "contactPerson": "김민준 대표",

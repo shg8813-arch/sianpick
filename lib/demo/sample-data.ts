@@ -30,22 +30,34 @@ export const URBANFOREST_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://
 
 export const NOIR_INK_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 44" fill="none"><rect width="240" height="44" fill="%2309090b" rx="2"/><text x="16" y="27" fill="%23ffffff" font-family="'Pretendard', system-ui, sans-serif" font-weight="900" font-size="13" letter-spacing="4">NOIR INK ATELIER</text><circle cx="218" cy="22" r="3" fill="%23d4af37"/></svg>`;
 
+export const KNITFILM_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 38" fill="none"><text x="2" y="25" fill="%2318181b" font-family="'Pretendard', system-ui, -apple-system, sans-serif" font-weight="900" font-size="18" letter-spacing="3.5">KNITFILM</text><circle cx="145" cy="14" r="3" fill="%2318181b"/></svg>`;
+
 export const STUDIO_ATELIER_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 38" fill="none"><text x="2" y="25" fill="%2318181b" font-family="'Pretendard', system-ui, -apple-system, sans-serif" font-weight="900" font-size="16" letter-spacing="3.5">STUDIO ATELIER</text><circle cx="218" cy="14" r="3" fill="%2318181b"/></svg>`;
 
 export const INITIAL_STUDIO_PROFILE: StudioProfile = {
-  studioName: '스튜디오 아틀리에 (STUDIO ATELIER)',
-  logoUrl: STUDIO_ATELIER_LOGO_SVG,
+  studioName: 'knitfilm 스튜디오',
+  logoUrl: KNITFILM_LOGO_SVG,
   logoHeight: 36,
-  representative: '이시안',
-  registrationNumber: '214-88-12345',
-  contact: '02-543-9801',
-  email: 'contact@studio-atelier.kr',
-  address: '서울특별시 용산구 한남대로 20길 14, 3층',
-  bankAccount: '기업은행 010-5439-8012 (예금주: 스튜디오 아틀리에)',
-  updatedAt: '2026-10-18T08:00:00Z',
+  representative: '대표 디자이너',
+  registrationNumber: '',
+  contact: '',
+  email: 'contact@knitfilm.com',
+  address: '',
+  bankAccount: '',
+  updatedAt: '2026-10-29T00:00:00Z',
 };
 
 export const INITIAL_COMPANIES: Company[] = [
+  {
+    id: 'company-runofthemill',
+    name: '런 오브 더 밀',
+    contactPerson: '김밀 대표',
+    email: 'client@runofthemill.kr',
+    phone: '010-8421-5502',
+    memo: '런오브더밀 제주점 브랜딩 및 전용 디자인 시안 프로젝트',
+    createdAt: '2026-10-25T09:00:00Z',
+    updatedAt: '2026-10-29T08:00:00Z',
+  },
   {
     id: 'company-urbanforest',
     name: '어반 포레스트',
