@@ -269,6 +269,24 @@ export class DemoProjectRepository implements IProjectRepository {
     } catch {}
   }
 
+  private updateProjectInMemoryAndLocal(project: Project): void {
+    const projects = this.getStorage();
+    const idx = projects.findIndex((p) => p.id === project.id);
+    if (idx >= 0) {
+      projects[idx] = project;
+    } else {
+      projects.unshift(project);
+    }
+    const currentKey = this.getStorageKey();
+    this.memoryCache.set(currentKey, projects);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(currentKey, JSON.stringify(projects));
+      } catch {}
+      idbSet(currentKey, projects).catch(() => {});
+    }
+  }
+
   private saveStorage(projects: Project[]): void {
     if (typeof window === 'undefined') return;
     this.cleanupLegacyStorage();
@@ -295,6 +313,15 @@ export class DemoProjectRepository implements IProjectRepository {
         console.info('Projects persisted in IndexedDB and in-memory cache successfully.');
       }
     }
+
+    // 4. Asynchronously persist to Next.js server storage via API
+    try {
+      fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync', projects }),
+      }).catch(() => {});
+    } catch {}
   }
 
   private getCompaniesStorage(): Company[] {
@@ -342,6 +369,11 @@ export class DemoProjectRepository implements IProjectRepository {
     if (typeof window === 'undefined') return;
     try {
       window.localStorage.setItem(this.getCompaniesKey(), JSON.stringify(companies));
+      fetch('/api/companies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync', companies }),
+      }).catch(() => {});
     } catch (e) {
       console.error('Failed to save companies to localStorage', e);
     }
@@ -356,11 +388,24 @@ export class DemoProjectRepository implements IProjectRepository {
 
   // Company management
   async getCompanies(): Promise<Company[]> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/companies');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.companies)) {
+            const currentKey = this.getCompaniesKey();
+            window.localStorage.setItem(currentKey, JSON.stringify(data.companies));
+            return data.companies;
+          }
+        }
+      } catch {}
+    }
     return this.getCompaniesStorage();
   }
 
   async getCompanyById(id: string): Promise<Company | null> {
-    const list = this.getCompaniesStorage();
+    const list = await this.getCompanies();
     return list.find((c) => c.id === id) || null;
   }
 
@@ -371,7 +416,7 @@ export class DemoProjectRepository implements IProjectRepository {
     phone?: string;
     memo?: string;
   }): Promise<Company> {
-    const companies = this.getCompaniesStorage();
+    const companies = await this.getCompanies();
     const newCompany: Company = {
       id: `company-${Date.now()}`,
       name: data.name,
@@ -388,7 +433,7 @@ export class DemoProjectRepository implements IProjectRepository {
   }
 
   async updateCompany(id: string, updates: Partial<Company>): Promise<Company> {
-    const companies = this.getCompaniesStorage();
+    const companies = await this.getCompanies();
     const idx = companies.findIndex((c) => c.id === id);
     if (idx === -1) throw new Error('업체를 찾을 수 없습니다.');
     companies[idx] = {
@@ -401,24 +446,78 @@ export class DemoProjectRepository implements IProjectRepository {
   }
 
   async deleteCompany(id: string): Promise<void> {
-    const companies = this.getCompaniesStorage();
+    if (typeof window !== 'undefined') {
+      try {
+        fetch(`/api/companies?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
+      } catch {}
+    }
+    const companies = await this.getCompanies();
     const filtered = companies.filter((c) => c.id !== id);
     this.saveCompaniesStorage(filtered);
   }
 
   // Projects
+  private hasInitiallySyncedServer = false;
+
   async getProjects(): Promise<Project[]> {
     await this.ensureIdbSynced();
-    return this.getStorage();
+    const local = this.getStorage();
+
+    if (typeof window !== 'undefined') {
+      try {
+        // On first run, upload any local projects that might not be on the server yet
+        if (!this.hasInitiallySyncedServer && local.length > 0) {
+          this.hasInitiallySyncedServer = true;
+          const syncRes = await fetch('/api/projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'sync', projects: local }),
+          });
+          if (syncRes.ok) {
+            const syncData = await syncRes.json();
+            if (syncData.success && Array.isArray(syncData.projects)) {
+              this.saveStorage(syncData.projects);
+              return syncData.projects;
+            }
+          }
+        }
+
+        const res = await fetch('/api/projects');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.projects)) {
+            const serverProjects: Project[] = data.projects;
+            this.saveStorage(serverProjects);
+            return serverProjects;
+          }
+        }
+      } catch (e) {
+        console.warn('Server fetch projects failed, using local storage fallback', e);
+      }
+    }
+
+    return local;
   }
 
   async getProjectsByCompany(companyId: string): Promise<Project[]> {
-    await this.ensureIdbSynced();
-    const projects = this.getStorage();
+    const projects = await this.getProjects();
     return projects.filter((p) => p.companyId === companyId);
   }
 
   async getProjectById(id: string): Promise<Project | null> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch(`/api/projects/${encodeURIComponent(id)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.project) {
+            this.updateProjectInMemoryAndLocal(data.project);
+            return data.project;
+          }
+        }
+      } catch {}
+    }
+
     await this.ensureIdbSynced();
     const projects = this.getStorage();
     let proj = projects.find((p) => p.id === id);
@@ -450,6 +549,23 @@ export class DemoProjectRepository implements IProjectRepository {
   }
 
   async getProjectByShareToken(token: string): Promise<Project | null> {
+    // 1. Try server first (essential for other PCs, mobile devices, and client links!)
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch(`/api/projects/share/${encodeURIComponent(token)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.project) {
+            this.updateProjectInMemoryAndLocal(data.project);
+            return data.project;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to fetch project by shareToken from server, using local fallback', e);
+      }
+    }
+
+    // 2. Local fallback
     await this.ensureIdbSynced();
     const projects = this.getStorage();
     let proj = projects.find((p) => p.shareToken === token);
@@ -563,9 +679,13 @@ export class DemoProjectRepository implements IProjectRepository {
   }
 
   async deleteProject(id: string): Promise<void> {
-    const projects = this.getStorage();
-    const filtered = projects.filter((p) => p.id !== id);
-    this.saveStorage(filtered);
+    if (typeof window !== 'undefined') {
+      try {
+        await fetch(`/api/projects/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      } catch {}
+    }
+    const projects = this.getStorage().filter((p) => p.id !== id);
+    this.saveStorage(projects);
   }
 
   // Design Items
@@ -1258,6 +1378,20 @@ export class DemoProjectRepository implements IProjectRepository {
 
   // Studio Profile Management (대시보드 메인에서 관리되는 로고 & 견적 공급자 정보)
   async getStudioProfile(): Promise<StudioProfile> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/studio');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.profile) {
+            const key = this.getStudioProfileKey();
+            localStorage.setItem(key, JSON.stringify(data.profile));
+            return data.profile;
+          }
+        }
+      } catch {}
+    }
+
     if (typeof window === 'undefined') return INITIAL_STUDIO_PROFILE;
     const key = this.getStudioProfileKey();
     try {
@@ -1298,6 +1432,11 @@ export class DemoProjectRepository implements IProjectRepository {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(key, JSON.stringify(updated));
+        fetch('/api/studio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        }).catch(() => {});
       } catch (err) {
         console.error('Failed to save studio profile', err);
       }

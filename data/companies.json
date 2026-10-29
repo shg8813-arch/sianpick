@@ -1,0 +1,32 @@
+[
+  {
+    "id": "company-urbanforest",
+    "name": "어반 포레스트",
+    "contactPerson": "김민준 대표",
+    "email": "client@urbanforest.design",
+    "phone": "010-8421-5502",
+    "memo": "친환경 라이프스타일 브랜드 어반 포레스트(URBAN FOREST) 통합 아이덴티티 및 패키징 리뉴얼",
+    "createdAt": "2026-10-15T09:00:00Z",
+    "updatedAt": "2026-10-18T08:00:00Z"
+  },
+  {
+    "id": "company-bloom",
+    "name": "블룸 플라워 아틀리에",
+    "contactPerson": "이플라워 실장",
+    "email": "contact@bloomflower.kr",
+    "phone": "010-7777-5678",
+    "memo": "플라워 부티크 로고 및 포장 패키지 디자인 문의",
+    "createdAt": "2026-10-17T11:00:00Z",
+    "updatedAt": "2026-10-17T11:00:00Z"
+  },
+  {
+    "id": "company-tattoo-client",
+    "name": "한소희 (커스텀 타투 의뢰)",
+    "contactPerson": "한소희 고객님",
+    "email": "sohee.tattoo@gmail.com",
+    "phone": "010-3819-7724",
+    "memo": "전완근 안쪽 보태니컬 뱀 & 와일드 로즈 파인라인 1:1 맞춤 커스텀 도안 제작 및 시술 의뢰",
+    "createdAt": "2026-10-22T10:00:00Z",
+    "updatedAt": "2026-10-22T10:00:00Z"
+  }
+]

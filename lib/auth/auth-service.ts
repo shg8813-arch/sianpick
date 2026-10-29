@@ -66,6 +66,26 @@ export class AuthService {
     }
   }
 
+  // Sync local accounts with server
+  public async syncWithServer(): Promise<void> {
+    if (typeof window === 'undefined') return;
+    try {
+      const localUsers = this.getRegisteredUsers();
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync', users: localUsers }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.users)) {
+          // Update cached users
+          localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(json.users));
+        }
+      }
+    } catch {}
+  }
+
   // Register a new designer user
   public async register(params: {
     email: string;
@@ -83,6 +103,47 @@ export class AuthService {
     }
     if (!name) throw new Error('디자이너 이름을 입력해주세요.');
 
+    // 1. Try server register first
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'register',
+            email,
+            password: params.password,
+            name,
+            studioName,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success && data.user) {
+          const userProfile: UserProfile = data.user;
+          this.setSession(userProfile);
+
+          // Update local cache
+          const localUsers = this.getRegisteredUsers();
+          if (!localUsers.some((u) => u.email.toLowerCase() === email)) {
+            localUsers.push({
+              ...userProfile,
+              passwordHash: params.password,
+            });
+            localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(localUsers));
+          }
+
+          return userProfile;
+        } else if (!res.ok && data.error) {
+          throw new Error(data.error);
+        }
+      } catch (err: any) {
+        if (err.message && (err.message.includes('이미 등록된') || err.message.includes('이메일'))) {
+          throw err;
+        }
+        // Fallback to local
+      }
+    }
+
     const users = this.getRegisteredUsers();
     const exists = users.find((u) => u.email.toLowerCase() === email);
     if (exists) {
@@ -96,7 +157,7 @@ export class AuthService {
       studioName,
       role: 'designer',
       createdAt: new Date().toISOString(),
-      passwordHash: params.password, // Local demonstration mode
+      passwordHash: params.password,
     };
 
     users.push(newUser);
@@ -131,11 +192,38 @@ export class AuthService {
       return DEMO_USER;
     }
 
+    // 1. Try server login first
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'login',
+            email,
+            password: params.password || '',
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success && data.user) {
+          const userProfile: UserProfile = data.user;
+          this.setSession(userProfile);
+          return userProfile;
+        } else if (res.status === 401 && data.error) {
+          throw new Error(data.error);
+        }
+      } catch (err: any) {
+        if (err.message && (err.message.includes('비밀번호') || err.message.includes('등록되지 않은'))) {
+          throw err;
+        }
+        // Fallback to local
+      }
+    }
+
     const users = this.getRegisteredUsers();
     const found = users.find((u) => u.email.toLowerCase() === email);
 
     if (!found) {
-      // Auto-register prospective customer with default account if password provided
       if (params.password) {
         return this.register({
           email,
