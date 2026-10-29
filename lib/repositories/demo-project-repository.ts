@@ -16,7 +16,7 @@ import {
   StudioProfile,
 } from '@/types';
 import { INITIAL_DEMO_PROJECT, INITIAL_TATTOO_PROJECT, INITIAL_COMPANIES, INITIAL_CONCEPTS, INITIAL_ESTIMATE, INITIAL_STUDIO_PROFILE } from '@/lib/demo/sample-data';
-import { idbGet, idbSet } from '@/lib/utils/idb-storage';
+import { idbGet, idbSet, idbGetAll } from '@/lib/utils/idb-storage';
 
 const STORAGE_KEY = 'sianpick_projects_store_v8';
 const STORAGE_KEY_V7 = 'sianpick_projects_store_v7';
@@ -456,30 +456,105 @@ export class DemoProjectRepository implements IProjectRepository {
     this.saveCompaniesStorage(filtered);
   }
 
+  // Local recovery & sync
+  async recoverLocalData(): Promise<{ recoveredProjectsCount: number; recoveredCompaniesCount: number }> {
+    if (typeof window === 'undefined') return { recoveredProjectsCount: 0, recoveredCompaniesCount: 0 };
+
+    const recoveredProjects: Project[] = [];
+    const recoveredCompanies: Company[] = [];
+
+    const tryAddProjects = (items: any) => {
+      if (!items) return;
+      const arr = Array.isArray(items) ? items : [items];
+      for (const p of arr) {
+        if (p && typeof p === 'object' && p.id && (p.title || p.concepts || p.clientName)) {
+          if (!recoveredProjects.some((rp) => rp.id === p.id)) {
+            recoveredProjects.push(p);
+          }
+        }
+      }
+    };
+
+    const tryAddCompanies = (items: any) => {
+      if (!items) return;
+      const arr = Array.isArray(items) ? items : [items];
+      for (const c of arr) {
+        if (c && typeof c === 'object' && c.id && c.name) {
+          if (!recoveredCompanies.some((rc) => rc.id === c.id || rc.name === c.name)) {
+            recoveredCompanies.push(c);
+          }
+        }
+      }
+    };
+
+    // 1. Scan ALL localStorage keys across all past versions
+    try {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (!k) continue;
+        const raw = window.localStorage.getItem(k);
+        if (!raw || (!raw.startsWith('[') && !raw.startsWith('{'))) continue;
+        try {
+          const parsed = JSON.parse(raw);
+          if (k.includes('project') || k.includes('sianpick') || k.includes('store')) {
+            tryAddProjects(parsed);
+          }
+          if (k.includes('compan') || k.includes('sianpick')) {
+            tryAddCompanies(parsed);
+          }
+        } catch {}
+      }
+    } catch {}
+
+    // 2. Scan IndexedDB
+    try {
+      const allIdb = await idbGetAll<any>();
+      for (const val of allIdb) {
+        tryAddProjects(val);
+        tryAddCompanies(val);
+      }
+    } catch {}
+
+    // 3. Post recovered projects to server API
+    if (recoveredProjects.length > 0) {
+      try {
+        await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'sync', projects: recoveredProjects }),
+        });
+      } catch {}
+    }
+
+    // 4. Post recovered companies to server API
+    if (recoveredCompanies.length > 0) {
+      try {
+        await fetch('/api/companies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'sync', companies: recoveredCompanies }),
+        });
+      } catch {}
+    }
+
+    return {
+      recoveredProjectsCount: recoveredProjects.length,
+      recoveredCompaniesCount: recoveredCompanies.length,
+    };
+  }
+
   // Projects
   private hasInitiallySyncedServer = false;
 
   async getProjects(): Promise<Project[]> {
     await this.ensureIdbSynced();
-    const local = this.getStorage();
 
     if (typeof window !== 'undefined') {
       try {
-        // On first run, upload any local projects that might not be on the server yet
-        if (!this.hasInitiallySyncedServer && local.length > 0) {
+        // Automatically recover and sync all local data on initial run
+        if (!this.hasInitiallySyncedServer) {
           this.hasInitiallySyncedServer = true;
-          const syncRes = await fetch('/api/projects', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'sync', projects: local }),
-          });
-          if (syncRes.ok) {
-            const syncData = await syncRes.json();
-            if (syncData.success && Array.isArray(syncData.projects)) {
-              this.saveStorage(syncData.projects);
-              return syncData.projects;
-            }
-          }
+          await this.recoverLocalData();
         }
 
         const res = await fetch('/api/projects');
@@ -496,7 +571,7 @@ export class DemoProjectRepository implements IProjectRepository {
       }
     }
 
-    return local;
+    return this.getStorage();
   }
 
   async getProjectsByCompany(companyId: string): Promise<Project[]> {

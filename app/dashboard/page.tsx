@@ -33,6 +33,7 @@ import {
   Copy,
   Check,
   Tag,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authService } from '@/lib/auth/auth-service';
@@ -70,6 +71,7 @@ export default function DashboardPage() {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [deletingCompanyId, setDeletingCompanyId] = useState<string | null>(null);
+  const [isRecovering, setIsRecovering] = useState(false);
 
   const loadData = async () => {
     try {
@@ -80,6 +82,8 @@ export default function DashboardPage() {
       setFeedbacks(loadedFeedbacks);
 
       const repo = getProjectRepository();
+      // Auto recover local data if needed
+      await repo.recoverLocalData();
       const [projList, compList, profile] = await Promise.all([
         repo.getProjects(),
         repo.getCompanies(),
@@ -103,6 +107,24 @@ export default function DashboardPage() {
       toast.error('데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleManualRecover = async () => {
+    try {
+      setIsRecovering(true);
+      const repo = getProjectRepository();
+      const res = await repo.recoverLocalData();
+      await loadData();
+      if (res.recoveredProjectsCount > 0 || res.recoveredCompaniesCount > 0) {
+        toast.success(`로컬에 보관된 프로젝트 ${res.recoveredProjectsCount}개, 업체 ${res.recoveredCompaniesCount}개를 서버에 성공적으로 복구했습니다.`);
+      } else {
+        toast.success('모든 데이터가 서버와 최신 상태로 동기화되었습니다.');
+      }
+    } catch {
+      toast.error('동기화 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsRecovering(false);
     }
   };
 
@@ -273,6 +295,17 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+            <button
+              type="button"
+              onClick={handleManualRecover}
+              disabled={isRecovering}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white text-zinc-700 text-xs sm:text-sm font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.035)] hover:bg-zinc-50 border border-zinc-200 transition-all disabled:opacity-50"
+              title="브라우저 로컬에 저장된 이전 프로젝트 및 업체를 서버와 동기화"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-zinc-500 ${isRecovering ? 'animate-spin' : ''}`} />
+              <span>데이터 복구/동기화</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setIsFeedbackModalOpen(true)}

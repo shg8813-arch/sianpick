@@ -20,10 +20,10 @@ export async function POST(req: NextRequest) {
     if (body.action === 'sync') {
       const localCompanies: Company[] = body.companies || [];
       const current = await getServerCompanies();
-      const currentMap = new Map(current.map((c) => [c.id, c]));
 
       for (const lc of localCompanies) {
-        if (!currentMap.has(lc.id)) {
+        if (!lc || !lc.id || !lc.name) continue;
+        if (!current.some((c) => c.id === lc.id || c.name === lc.name)) {
           current.push(lc);
         }
       }

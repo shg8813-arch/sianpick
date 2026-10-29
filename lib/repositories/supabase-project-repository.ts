@@ -369,4 +369,8 @@ export class SupabaseProjectRepository implements IProjectRepository {
   async updateStudioProfile(updates: Partial<StudioProfile>): Promise<StudioProfile> {
     return this.fallbackRepo.updateStudioProfile(updates);
   }
+
+  async recoverLocalData(): Promise<{ recoveredProjectsCount: number; recoveredCompaniesCount: number }> {
+    return this.fallbackRepo.recoverLocalData();
+  }
 }

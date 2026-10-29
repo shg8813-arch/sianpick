@@ -47,6 +47,24 @@ export async function idbGet<T>(key: string): Promise<T | null> {
   }
 }
 
+export async function idbGetAll<T>(): Promise<T[]> {
+  if (typeof window === 'undefined') return [];
+  try {
+    const db = await getDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve((request.result as T[]) || []);
+      request.onerror = () => resolve([]);
+    });
+  } catch (e) {
+    console.warn('idbGetAll warning:', e);
+    return [];
+  }
+}
+
 export async function idbSet(key: string, value: any): Promise<void> {
   if (typeof window === 'undefined') return;
   try {

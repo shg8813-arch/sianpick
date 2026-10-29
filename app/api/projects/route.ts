@@ -34,14 +34,17 @@ export async function POST(req: NextRequest) {
       const currentMap = new Map(currentProjects.map((p) => [p.id, p]));
 
       for (const lp of localProjects) {
+        if (!lp || !lp.id) continue;
         if (!currentMap.has(lp.id)) {
           await saveServerProject(lp);
         } else {
-          // If local project was modified more recently, update it
+          // If local project was modified more recently or has more concepts, update it
           const existing = currentMap.get(lp.id)!;
+          const localConceptsCount = lp.concepts?.length || 0;
+          const serverConceptsCount = existing.concepts?.length || 0;
           const localTime = new Date(lp.updatedAt || lp.createdAt).getTime();
           const serverTime = new Date(existing.updatedAt || existing.createdAt).getTime();
-          if (localTime > serverTime) {
+          if (localConceptsCount > serverConceptsCount || localTime > serverTime) {
             await saveServerProject(lp);
           }
         }
