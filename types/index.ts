@@ -32,6 +32,7 @@ export interface UserProfile {
   name: string;
   studioName?: string;
   role: 'designer' | 'client' | 'admin';
+  status?: 'active' | 'suspended';
   createdAt: string;
 }
 

@@ -1,94 +1,53 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Layers,
-  Sparkles,
-  ArrowRight,
   Lock,
   Mail,
-  User,
-  Building2,
+  Shield,
+  HelpCircle,
+  X,
   CheckCircle2,
-  ShieldCheck,
+  ArrowRight,
 } from 'lucide-react';
 import { authService } from '@/lib/auth/auth-service';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
-function LoginForm() {
+function StudioLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
 
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [studioName, setStudioName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [registeredAccounts, setRegisteredAccounts] = useState<Array<{ email: string; name?: string; studioName?: string }>>([
-    { email: 'knitfilm@studio.com', name: 'knitfilm 대표', studioName: 'knitfilm 스튜디오' },
-    { email: 'designer@sianpick.com', name: '대표 디자이너', studioName: 'knitfilm 스튜디오' },
-  ]);
 
-  useEffect(() => {
-    const tabParam = searchParams.get('tab');
-    if (tabParam === 'register') {
-      setActiveTab('register');
-    }
+  // Find Account & Reset Password Modal State
+  const [isFindModalOpen, setIsFindModalOpen] = useState(false);
+  const [findEmail, setFindEmail] = useState('');
+  const [foundAccount, setFoundAccount] = useState<{
+    email: string;
+    name: string;
+    studioName: string;
+    createdAt: string;
+  } | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isFinding, setIsFinding] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
-    const fetchAccounts = async () => {
-      try {
-        const res = await fetch('/api/auth');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && Array.isArray(data.users)) {
-            const list: Array<{ email: string; name?: string; studioName?: string }> = [...data.users];
-            try {
-              const localStr = localStorage.getItem('sianpick_registered_users_v1');
-              if (localStr) {
-                const local = JSON.parse(localStr);
-                if (Array.isArray(local)) {
-                  for (const lu of local) {
-                    if (lu && lu.email && !list.some((u) => u.email.toLowerCase() === lu.email.toLowerCase())) {
-                      list.push(lu);
-                    }
-                  }
-                }
-              }
-            } catch {}
-            if (list.length > 0) {
-              setRegisteredAccounts(list);
-            }
-          }
-        }
-      } catch {}
-    };
-    fetchAccounts();
-  }, [searchParams]);
-
-  const handleSelectAccount = (accEmail: string) => {
-    setEmail(accEmail);
-    setPassword('1234');
-    toast.info(`${accEmail} 계정이 선택되었습니다.`);
-  };
-
-  // Demo Login
-  const handleDemoLogin = () => {
-    authService.loginAsDemo();
-    toast.success('knitfilm 스튜디오 계정으로 로그인되었습니다.');
-    const redirectUrl = searchParams.get('redirect') || '/dashboard';
-    router.push(redirectUrl);
-  };
-
-  // Sign In
+  // Sign In Handler
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
-      toast.error('이메일을 입력해주세요.');
+      toast.error('스튜디오 이메일 아이디를 입력해주세요.');
+      return;
+    }
+    if (!password) {
+      toast.error('비밀번호를 입력해주세요.');
       return;
     }
 
@@ -104,63 +63,87 @@ function LoginForm() {
       }
 
       const user = await authService.login({ email, password });
-      toast.success(`${user.name || user.email} 디자이너님, 환영합니다.`);
+      toast.success(`${user.studioName || user.name || user.email} 로그인되었습니다.`);
       const redirectUrl = searchParams.get('redirect') || '/dashboard';
       router.push(redirectUrl);
     } catch (err: any) {
-      toast.error(err.message || '로그인에 실패했습니다. 다시 시도해주세요.');
+      toast.error(err.message || '로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Sign Up
-  const handleRegister = async (e: React.FormEvent) => {
+  // Find Account Handler
+  const handleFindAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) {
-      toast.error('이메일을 입력해주세요.');
-      return;
-    }
-    if (!name.trim()) {
-      toast.error('디자이너 이름을 입력해주세요.');
-      return;
-    }
-    if (!password || password.length < 4) {
-      toast.error('비밀번호는 최소 4자 이상 입력해주세요.');
+    if (!findEmail.trim()) {
+      toast.error('조회할 이메일 주소를 입력해주세요.');
       return;
     }
 
     try {
-      setIsLoading(true);
-
-      if (isSupabaseConfigured && supabase) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              name,
-              studioName,
-            },
-          },
-        });
-        if (error) throw error;
-      }
-
-      const newUser = await authService.register({
-        email,
-        password,
-        name,
-        studioName,
+      setIsFinding(true);
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'find_account', email: findEmail.trim() }),
       });
 
-      toast.success(`${newUser.studioName || newUser.name} 스튜디오 계정이 생성되었습니다.`);
-      const redirectUrl = searchParams.get('redirect') || '/dashboard';
-      router.push(redirectUrl);
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || '해당 이메일로 등록된 스튜디오 계정을 찾을 수 없습니다.');
+      }
+
+      setFoundAccount(data.account);
+      toast.success('등록된 스튜디오 계정이 확인되었습니다. 새 비밀번호를 설정할 수 있습니다.');
     } catch (err: any) {
-      toast.error(err.message || '회원가입 중 오류가 발생했습니다.');
+      toast.error(err.message);
+      setFoundAccount(null);
     } finally {
-      setIsLoading(false);
+      setIsFinding(false);
+    }
+  };
+
+  // Reset Password Handler
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 4) {
+      toast.error('비밀번호는 최소 4자 이상이어야 합니다.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('비밀번호 확인이 일치하지 않습니다.');
+      return;
+    }
+
+    try {
+      setIsResetting(true);
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'reset_password',
+          email: foundAccount?.email || findEmail.trim(),
+          newPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || '비밀번호 재설정에 실패했습니다.');
+      }
+
+      toast.success('비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해주세요.');
+      setEmail(foundAccount?.email || findEmail.trim());
+      setPassword(newPassword);
+      setIsFindModalOpen(false);
+      setFoundAccount(null);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -179,293 +162,220 @@ function LoginForm() {
         </p>
       </div>
 
-      {/* Main Authentication Card */}
-      <div className="w-full max-w-md bg-white shadow-[0_6px_30px_rgba(0,0,0,0.05)] border border-zinc-100 overflow-hidden">
-        {/* Tab Switcher (그레이 배경 활성화 스타일 준수) */}
-        <div className="grid grid-cols-2 border-b border-zinc-100 bg-zinc-50">
-          <button
-            type="button"
-            onClick={() => setActiveTab('login')}
-            className={`py-3.5 text-xs font-bold transition-all border-b-2 ${
-              activeTab === 'login'
-                ? 'bg-zinc-200 text-zinc-900 border-zinc-900 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-800 border-transparent'
-            }`}
-          >
-            디자이너 로그인
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('register')}
-            className={`py-3.5 text-xs font-bold transition-all border-b-2 ${
-              activeTab === 'register'
-                ? 'bg-zinc-200 text-zinc-900 border-zinc-900 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-800 border-transparent'
-            }`}
-          >
-            무료 계정 생성 (예비 고객)
-          </button>
-        </div>
+      {/* Main Studio Login Card */}
+      <div className="w-full max-w-md bg-white shadow-[0_6px_30px_rgba(0,0,0,0.05)] border border-zinc-200/80 overflow-hidden">
+        <div className="p-8 space-y-6">
+          <div>
+            <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest block">
+              STUDIO SIGN IN
+            </span>
+            <h1 className="text-xl font-bold text-zinc-900 mt-0.5">스튜디오 로그인</h1>
+            <p className="text-xs text-zinc-500 mt-1">
+              등록된 스튜디오 계정의 이메일과 비밀번호를 입력해주세요.
+            </p>
+          </div>
 
-        <div className="p-6 sm:p-8">
-          {activeTab === 'login' ? (
-            /* Login Form */
-            <div className="space-y-6">
-              <div>
-                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest block">
-                  SIGN IN
-                </span>
-                <h2 className="text-xl font-bold text-zinc-900 mt-0.5">스튜디오 로그인</h2>
-                <p className="text-xs text-zinc-500 mt-1">
-                  생성하신 디자이너 계정으로 로그인하여 프로젝트를 관리하세요.
-                </p>
+          {/* Email Login Form */}
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-zinc-900 mb-1.5">
+                스튜디오 이메일 (아이디)
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="studio@example.com"
+                  className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900 transition-colors"
+                />
               </div>
+            </div>
 
-              {/* Quick Demo Access */}
-              <div className="p-4 bg-zinc-50 border border-zinc-200/80 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-800">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>knitfilm 스튜디오 계정으로 즉시 시작</span>
-                  </div>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-zinc-200 text-zinc-700 font-mono font-medium">
-                    KNITFILM
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  별도 입력 없이 knitfilm 스튜디오의 런오브더밀 프로젝트 및 관리자 대시보드로 즉시 접속합니다.
-                </p>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-zinc-900">
+                  비밀번호
+                </label>
                 <button
                   type="button"
-                  onClick={handleDemoLogin}
-                  className="w-full py-2 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs tracking-wide shadow-sm transition-all flex items-center justify-center gap-1.5"
+                  onClick={() => {
+                    setFindEmail(email);
+                    setFoundAccount(null);
+                    setIsFindModalOpen(true);
+                  }}
+                  className="text-[11px] text-zinc-500 hover:text-zinc-900 font-medium transition-colors"
                 >
-                  <span>knitfilm 스튜디오로 즉시 로그인</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  아이디 / 비밀번호 찾기
                 </button>
               </div>
-
-              {/* Registered Accounts Quick Select */}
-              {registeredAccounts.length > 0 && (
-                <div className="p-3 bg-zinc-50 border border-zinc-200/80 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-zinc-800">
-                      등록된 로그인 계정 목록
-                    </span>
-                    <span className="text-[10px] text-zinc-500">
-                      클릭시 자동 입력
-                    </span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {registeredAccounts.map((acc) => (
-                      <button
-                        key={acc.email}
-                        type="button"
-                        onClick={() => handleSelectAccount(acc.email)}
-                        className={`w-full text-left p-2 border transition-all flex items-center justify-between ${
-                          email === acc.email
-                            ? 'bg-white border-zinc-900 shadow-xs'
-                            : 'bg-white hover:bg-zinc-100/70 border-zinc-200'
-                        }`}
-                      >
-                        <div className="truncate pr-2">
-                          <p className="text-xs font-bold text-zinc-900 font-mono truncate">
-                            {acc.email}
-                          </p>
-                          <p className="text-[10px] text-zinc-500 truncate">
-                            {acc.studioName || acc.name || '디자이너'} · 비밀번호: 1234
-                          </p>
-                        </div>
-                        <span className="text-[10px] px-1.5 py-0.5 bg-zinc-100 text-zinc-700 font-medium whitespace-nowrap">
-                          선택
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="relative flex py-1 items-center">
-                <div className="flex-grow border-t border-zinc-100" />
-                <span className="flex-shrink mx-3 text-[11px] text-zinc-400 font-mono">또는 직접 입력하여 로그인</span>
-                <div className="flex-grow border-t border-zinc-100" />
+              <div className="relative">
+                <Lock className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="비밀번호를 입력하세요"
+                  className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900 transition-colors"
+                />
               </div>
-
-              {/* Email Login Form */}
-              <form onSubmit={handleEmailLogin} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-zinc-900 mb-1.5">
-                    이메일 주소
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="knitfilm@studio.com 또는 designer@sianpick.com"
-                      className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-zinc-900 mb-1.5">
-                    비밀번호
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="비밀번호 (초기: 1234)"
-                      className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900 transition-colors"
-                    />
-                  </div>
-                  <p className="text-[10px] text-zinc-400 mt-1">
-                    등록된 계정의 기본 비밀번호는 1234 입니다.
-                  </p>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white font-semibold text-xs tracking-wide shadow-sm transition-all"
-                >
-                  {isLoading ? '로그인 중...' : '디자이너 로그인'}
-                </button>
-              </form>
             </div>
-          ) : (
-            /* Register Form */
-            <div className="space-y-6">
-              <div>
-                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest block">
-                  FREE REGISTRATION
-                </span>
-                <h2 className="text-xl font-bold text-zinc-900 mt-0.5">예비 고객 디자이너 등록</h2>
-                <p className="text-xs text-zinc-500 mt-1">
-                  나만의 스튜디오 워크스페이스를 생성하고 시안을 고객에게 전달해보세요.
-                </p>
-              </div>
 
-              {/* Free Benefits Notice */}
-              <div className="p-3.5 bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-600 space-y-1.5">
-                <div className="flex items-center gap-1.5 font-bold text-zinc-900">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>예비 고객 무료 혜택</span>
-                </div>
-                <div className="text-[11px] text-zinc-500 leading-relaxed">
-                  - 개별 독립 워크스페이스 및 프로젝트 무제한 생성
-                  <br />
-                  - 스튜디오 공식 로고 커스텀 및 견적서 연동
-                  <br />
-                  - 고객 전용 보안 공유 링크 및 작업창 피드백 수렴
-                </div>
-              </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold text-xs tracking-wide shadow-sm transition-all"
+            >
+              {isLoading ? '로그인 확인 중...' : '스튜디오 로그인'}
+            </button>
+          </form>
 
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-zinc-900 mb-1.5">
-                    디자이너 성함 / 닉네임 <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="예: 김디자이너"
-                      className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-zinc-900 mb-1.5">
-                    스튜디오 / 업체 상호명 (선택)
-                  </label>
-                  <div className="relative">
-                    <Building2 className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      value={studioName}
-                      onChange={(e) => setStudioName(e.target.value)}
-                      placeholder="예: 스튜디오 아틀리에 (미입력시 성함으로 자동생성)"
-                      className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-zinc-900 mb-1.5">
-                    이메일 주소 <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="designer@studio.kr"
-                      className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-zinc-900 mb-1.5">
-                    비밀번호 설정 <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="최소 4자 이상 입력"
-                      className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white font-semibold text-xs tracking-wide shadow-sm transition-all flex items-center justify-center gap-1.5"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                  <span>{isLoading ? '계정 생성 중...' : '무료 디자이너 계정 생성 및 시작'}</span>
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 bg-zinc-50 border-t border-zinc-100 text-center text-xs text-zinc-400 flex items-center justify-between">
-          <Link href="/" className="hover:text-zinc-700 transition-colors">
-            홈으로 돌아가기
-          </Link>
-          <a
-            href="mailto:sianpick.team@gmail.com"
-            className="hover:text-zinc-700 transition-colors"
-          >
-            고객센터 문의
-          </a>
+          {/* Bottom Divider & Platform Admin Link */}
+          <div className="pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400">
+            <span>시안픽 플랫폼 서비스</span>
+            <Link
+              href="/admin/login"
+              className="hover:text-zinc-800 transition-colors flex items-center gap-1 font-medium"
+            >
+              <Shield className="w-3 h-3 text-zinc-400" />
+              <span>사이트 전체 관리자</span>
+            </Link>
+          </div>
         </div>
       </div>
+
+      {/* Find ID & Password Modal */}
+      {isFindModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full p-6 shadow-2xl border border-zinc-200 space-y-5 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-zinc-800" />
+                <h3 className="text-sm font-bold text-zinc-900">
+                  스튜디오 계정 및 비밀번호 찾기
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsFindModalOpen(false);
+                  setFoundAccount(null);
+                }}
+                className="text-zinc-400 hover:text-zinc-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {!foundAccount ? (
+              /* Step 1: Query Account by Email */
+              <form onSubmit={handleFindAccount} className="space-y-4">
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  스튜디오 등록 시 사용하신 이메일 주소를 입력하시면 계정 등록 여부를 확인하고 비밀번호를 즉시 재설정할 수 있습니다.
+                </p>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-900 mb-1">
+                    등록 이메일 주소
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={findEmail}
+                    onChange={(e) => setFindEmail(e.target.value)}
+                    placeholder="example@studio.com"
+                    className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900"
+                  />
+                </div>
+
+                <div className="flex gap-2 justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsFindModalOpen(false)}
+                    className="px-3 py-2 text-xs text-zinc-600 hover:text-zinc-900"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isFinding}
+                    className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold disabled:opacity-50"
+                  >
+                    {isFinding ? '계정 조회 중...' : '계정 확인'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* Step 2: Reset Password for Found Account */
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="p-3 bg-zinc-50 border border-zinc-200 text-xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-zinc-900">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>확인된 스튜디오 계정 정보</span>
+                  </div>
+                  <div className="text-zinc-600 space-y-0.5 text-[11px]">
+                    <p>스튜디오명: {foundAccount.studioName}</p>
+                    <p>담당 디자이너: {foundAccount.name}</p>
+                    <p>이메일 아이디: {foundAccount.email}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-900 mb-1">
+                    새 비밀번호 (4자 이상)
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="새로운 비밀번호 입력"
+                    className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-900 mb-1">
+                    새 비밀번호 확인
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="새로운 비밀번호 다시 입력"
+                    className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900"
+                  />
+                </div>
+
+                <div className="flex gap-2 justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setFoundAccount(null)}
+                    className="px-3 py-2 text-xs text-zinc-600 hover:text-zinc-900"
+                  >
+                    다시 조회
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isResetting}
+                    className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold disabled:opacity-50"
+                  >
+                    {isResetting ? '재설정 중...' : '비밀번호 재설정 완료'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default function LoginPage() {
+export default function StudioLoginPage() {
   return (
     <Suspense
       fallback={
@@ -474,7 +384,7 @@ export default function LoginPage() {
         </div>
       }
     >
-      <LoginForm />
+      <StudioLoginForm />
     </Suspense>
   );
 }

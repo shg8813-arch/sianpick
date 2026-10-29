@@ -185,20 +185,9 @@ export class AuthService {
   }): Promise<UserProfile> {
     const email = params.email.trim().toLowerCase();
     if (!email) throw new Error('이메일을 입력해주세요.');
+    if (!params.password) throw new Error('비밀번호를 입력해주세요.');
 
-    // If demo or knitfilm studio email
-    if (email === DEMO_USER.email.toLowerCase() || email === 'knitfilm@studio.com' || email === 'designer@sianpick.com') {
-      const userProfile: UserProfile = {
-        ...DEMO_USER,
-        email,
-        name: email.includes('knit') ? 'knitfilm 대표' : '대표 디자이너',
-        studioName: 'knitfilm 스튜디오',
-      };
-      this.setSession(userProfile);
-      return userProfile;
-    }
-
-    // 1. Try server login first
+    // 1. Authenticate with server API
     if (typeof window !== 'undefined') {
       try {
         const res = await fetch('/api/auth', {
@@ -207,7 +196,7 @@ export class AuthService {
           body: JSON.stringify({
             action: 'login',
             email,
-            password: params.password || '',
+            password: params.password,
           }),
         });
         const data = await res.json();
@@ -215,30 +204,27 @@ export class AuthService {
           const userProfile: UserProfile = data.user;
           this.setSession(userProfile);
           return userProfile;
-        } else if (res.status === 401 && data.error) {
+        } else if (data.error) {
           throw new Error(data.error);
         }
       } catch (err: any) {
-        if (err.message && (err.message.includes('비밀번호') || err.message.includes('등록되지 않은'))) {
+        if (
+          err.message &&
+          (err.message.includes('비밀번호') ||
+            err.message.includes('등록되지 않은') ||
+            err.message.includes('정지된'))
+        ) {
           throw err;
         }
-        // Fallback to local
       }
     }
 
+    // 2. Fallback to local registered cache
     const users = this.getRegisteredUsers();
     const found = users.find((u) => u.email.toLowerCase() === email);
 
     if (!found) {
-      if (params.password) {
-        return this.register({
-          email,
-          password: params.password,
-          name: email.split('@')[0],
-          studioName: `${email.split('@')[0]} 스튜디오`,
-        });
-      }
-      throw new Error('등록되지 않은 이메일입니다. 회원가입을 진행해주세요.');
+      throw new Error('등록되지 않은 이메일 주소입니다. 아이디 찾기를 진행해주세요.');
     }
 
     if (params.password && found.passwordHash && found.passwordHash !== params.password) {

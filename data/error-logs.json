@@ -1,0 +1,20 @@
+[
+  {
+    "id": "log-err-001",
+    "timestamp": "2026-10-29T06:30:00.000Z",
+    "type": "storage",
+    "severity": "warning",
+    "message": "로컬 브라우저 IndexedDB / localStorage 도메인 교차 접근 제한 감지",
+    "details": "sianpick.vercel.app 도메인과 localhost 간 브라우저 보안 격리로 인해 로컬 데이터 공유 불가",
+    "source": "storage.ts"
+  },
+  {
+    "id": "log-err-002",
+    "timestamp": "2026-10-29T06:45:00.000Z",
+    "type": "auth",
+    "severity": "info",
+    "message": "스튜디오 로그인 시도 및 계정 검증",
+    "details": "스튜디오 계정 인증 처리 완료",
+    "source": "api/auth"
+  }
+]

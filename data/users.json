@@ -1,10 +1,21 @@
 [
   {
+    "id": "master-admin",
+    "email": "admin@sianpick.com",
+    "name": "플랫폼 총괄 관리자",
+    "studioName": "시안픽 플랫폼 본사",
+    "role": "admin",
+    "status": "active",
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "passwordHash": "admin1234"
+  },
+  {
     "id": "knitfilm-designer",
     "email": "knitfilm@studio.com",
     "name": "knitfilm 대표",
     "studioName": "knitfilm 스튜디오",
     "role": "designer",
+    "status": "active",
     "createdAt": "2026-10-25T00:00:00.000Z",
     "passwordHash": "1234"
   },
@@ -12,8 +23,9 @@
     "id": "demo-designer",
     "email": "designer@sianpick.com",
     "name": "대표 디자이너",
-    "studioName": "knitfilm 스튜디오",
+    "studioName": "스튜디오 아틀리에",
     "role": "designer",
+    "status": "active",
     "createdAt": "2026-01-01T00:00:00.000Z",
     "passwordHash": "1234"
   }

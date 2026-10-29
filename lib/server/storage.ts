@@ -13,16 +13,28 @@ export interface ServerUserAccount {
   name: string;
   studioName?: string;
   role: 'designer' | 'client' | 'admin';
+  status?: 'active' | 'suspended';
   createdAt: string;
   passwordHash?: string;
+}
+
+export interface SystemErrorLog {
+  id: string;
+  timestamp: string;
+  type: 'auth' | 'storage' | 'link' | 'system';
+  severity: 'info' | 'warning' | 'error';
+  message: string;
+  details?: string;
+  source?: string;
 }
 
 const DEFAULT_DEMO_USER: ServerUserAccount = {
   id: 'demo-designer',
   email: 'designer@sianpick.com',
   name: '대표 디자이너',
-  studioName: 'knitfilm 스튜디오',
+  studioName: '스튜디오 아틀리에',
   role: 'designer',
+  status: 'active',
   createdAt: '2026-01-01T00:00:00.000Z',
   passwordHash: '1234',
 };
@@ -32,6 +44,7 @@ const PROJECTS_DIR = path.join(DATA_DIR, 'projects');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const COMPANIES_FILE = path.join(DATA_DIR, 'companies.json');
 const STUDIO_FILE = path.join(DATA_DIR, 'studio.json');
+const ERROR_LOGS_FILE = path.join(DATA_DIR, 'error-logs.json');
 
 // In-memory cache for ultra-fast response
 let isInitialized = false;
@@ -261,5 +274,32 @@ export async function deleteServerProject(id: string): Promise<void> {
   const filePath = path.join(PROJECTS_DIR, `${id}.json`);
   try {
     await fs.unlink(filePath);
+  } catch {}
+}
+
+// System Error & Activity Logs for Platform Admin
+export async function getServerErrorLogs(): Promise<SystemErrorLog[]> {
+  await initServerStorage();
+  try {
+    const raw = await fs.readFile(ERROR_LOGS_FILE, 'utf-8');
+    const logs = JSON.parse(raw);
+    return Array.isArray(logs) ? logs : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function logServerError(log: Omit<SystemErrorLog, 'id' | 'timestamp'>): Promise<void> {
+  await initServerStorage();
+  try {
+    const current = await getServerErrorLogs();
+    const newEntry: SystemErrorLog = {
+      ...log,
+      id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: new Date().toISOString(),
+    };
+    current.unshift(newEntry);
+    if (current.length > 200) current.length = 200;
+    await atomicWriteJson(ERROR_LOGS_FILE, current);
   } catch {}
 }
