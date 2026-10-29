@@ -456,20 +456,37 @@ export class DemoProjectRepository implements IProjectRepository {
     this.saveCompaniesStorage(filtered);
   }
 
-  // Local recovery & sync
-  async recoverLocalData(): Promise<{ recoveredProjectsCount: number; recoveredCompaniesCount: number }> {
+  // Comprehensive Local recovery & sync
+  async recoverLocalData(): Promise<{
+    recoveredProjectsCount: number;
+    recoveredCompaniesCount: number;
+    recoveredStudioName?: string;
+  }> {
     if (typeof window === 'undefined') return { recoveredProjectsCount: 0, recoveredCompaniesCount: 0 };
 
     const recoveredProjects: Project[] = [];
     const recoveredCompanies: Company[] = [];
+    let recoveredStudioProfile: StudioProfile | null = null;
+    let recoveredKnitfilmUser: any = null;
 
     const tryAddProjects = (items: any) => {
       if (!items) return;
       const arr = Array.isArray(items) ? items : [items];
       for (const p of arr) {
         if (p && typeof p === 'object' && p.id && (p.title || p.concepts || p.clientName)) {
-          if (!recoveredProjects.some((rp) => rp.id === p.id)) {
+          const existingIdx = recoveredProjects.findIndex((rp) => rp.id === p.id);
+          if (existingIdx === -1) {
             recoveredProjects.push(p);
+          } else {
+            // Keep the one with more concepts or customized title
+            const existing = recoveredProjects[existingIdx];
+            if (
+              (p.concepts?.length || 0) > (existing.concepts?.length || 0) ||
+              (p.companyName && p.companyName.toLowerCase().includes('knit')) ||
+              (p.title && p.title.toLowerCase().includes('knit'))
+            ) {
+              recoveredProjects[existingIdx] = p;
+            }
           }
         }
       }
@@ -493,16 +510,63 @@ export class DemoProjectRepository implements IProjectRepository {
         const k = window.localStorage.key(i);
         if (!k) continue;
         const raw = window.localStorage.getItem(k);
-        if (!raw || (!raw.startsWith('[') && !raw.startsWith('{'))) continue;
-        try {
-          const parsed = JSON.parse(raw);
-          if (k.includes('project') || k.includes('sianpick') || k.includes('store')) {
+        if (!raw) continue;
+
+        // Check for registered users or user session
+        if (k.includes('user') || k.includes('session') || k.includes('auth')) {
+          try {
+            const parsedUser = JSON.parse(raw);
+            const userArr = Array.isArray(parsedUser) ? parsedUser : [parsedUser];
+            for (const u of userArr) {
+              if (u && (u.studioName || u.email || u.name)) {
+                if (
+                  (u.studioName && u.studioName.toLowerCase().includes('knit')) ||
+                  (u.email && u.email.toLowerCase().includes('knit')) ||
+                  (u.name && u.name.toLowerCase().includes('knit'))
+                ) {
+                  recoveredKnitfilmUser = u;
+                }
+              }
+            }
+            if (Array.isArray(parsedUser) && parsedUser.length > 0) {
+              fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'sync', users: parsedUser }),
+              }).catch(() => {});
+            }
+          } catch {}
+        }
+
+        // Check for studio profile
+        if (k.includes('studio') || k.includes('profile')) {
+          try {
+            const parsedProfile = JSON.parse(raw);
+            if (parsedProfile && (parsedProfile.studioName || parsedProfile.logoUrl)) {
+              if (parsedProfile.studioName && parsedProfile.studioName.toLowerCase().includes('knit')) {
+                recoveredStudioProfile = parsedProfile;
+              } else if (!recoveredStudioProfile && parsedProfile.studioName && !parsedProfile.studioName.includes('스튜디오 아틀리에')) {
+                recoveredStudioProfile = parsedProfile;
+              }
+            }
+          } catch {}
+        }
+
+        // Check for projects
+        if (k.includes('project') || k.includes('sianpick') || k.includes('store')) {
+          try {
+            const parsed = JSON.parse(raw);
             tryAddProjects(parsed);
-          }
-          if (k.includes('compan') || k.includes('sianpick')) {
+          } catch {}
+        }
+
+        // Check for companies
+        if (k.includes('compan') || k.includes('sianpick') || k.includes('client')) {
+          try {
+            const parsed = JSON.parse(raw);
             tryAddCompanies(parsed);
-          }
-        } catch {}
+          } catch {}
+        }
       }
     } catch {}
 
@@ -512,10 +576,64 @@ export class DemoProjectRepository implements IProjectRepository {
       for (const val of allIdb) {
         tryAddProjects(val);
         tryAddCompanies(val);
+        if (val && typeof val === 'object' && val.studioName) {
+          if (val.studioName.toLowerCase().includes('knit')) {
+            recoveredStudioProfile = val;
+          }
+        }
       }
     } catch {}
 
-    // 3. Post recovered projects to server API
+    // 3. Fallback check for knitfilm in entire localStorage dump
+    if (!recoveredKnitfilmUser && !recoveredStudioProfile && typeof window !== 'undefined') {
+      try {
+        const allDump = JSON.stringify(window.localStorage);
+        if (allDump.toLowerCase().includes('knitfilm')) {
+          recoveredStudioProfile = {
+            ...INITIAL_STUDIO_PROFILE,
+            studioName: 'knitfilm 스튜디오',
+          };
+        }
+      } catch {}
+    }
+
+    // If knitfilm user was found, restore active user session
+    if (recoveredKnitfilmUser) {
+      const authUser = {
+        id: recoveredKnitfilmUser.id || 'knitfilm-designer',
+        email: recoveredKnitfilmUser.email || 'knitfilm@studio.com',
+        name: recoveredKnitfilmUser.name || 'knitfilm 디자이너',
+        studioName: recoveredKnitfilmUser.studioName || 'knitfilm 스튜디오',
+        role: (recoveredKnitfilmUser.role || 'designer') as 'designer' | 'client' | 'admin',
+        createdAt: recoveredKnitfilmUser.createdAt || new Date().toISOString(),
+      };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sianpick_current_user_session', JSON.stringify(authUser));
+      }
+      if (!recoveredStudioProfile) {
+        recoveredStudioProfile = {
+          ...INITIAL_STUDIO_PROFILE,
+          studioName: authUser.studioName,
+          representative: authUser.name,
+          email: authUser.email,
+        };
+      }
+    }
+
+    // 4. Post recovered studio profile to server
+    if (recoveredStudioProfile) {
+      try {
+        await fetch('/api/studio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(recoveredStudioProfile),
+        });
+        localStorage.setItem(this.getStudioProfileKey(), JSON.stringify(recoveredStudioProfile));
+        localStorage.setItem('sianpick_studio_profile_v1', JSON.stringify(recoveredStudioProfile));
+      } catch {}
+    }
+
+    // 5. Post recovered projects to server API
     if (recoveredProjects.length > 0) {
       try {
         await fetch('/api/projects', {
@@ -526,7 +644,7 @@ export class DemoProjectRepository implements IProjectRepository {
       } catch {}
     }
 
-    // 4. Post recovered companies to server API
+    // 6. Post recovered companies to server API
     if (recoveredCompanies.length > 0) {
       try {
         await fetch('/api/companies', {
@@ -540,6 +658,7 @@ export class DemoProjectRepository implements IProjectRepository {
     return {
       recoveredProjectsCount: recoveredProjects.length,
       recoveredCompaniesCount: recoveredCompanies.length,
+      recoveredStudioName: recoveredStudioProfile?.studioName || recoveredKnitfilmUser?.studioName,
     };
   }
 

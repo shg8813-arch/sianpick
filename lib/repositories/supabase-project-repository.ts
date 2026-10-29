@@ -370,7 +370,7 @@ export class SupabaseProjectRepository implements IProjectRepository {
     return this.fallbackRepo.updateStudioProfile(updates);
   }
 
-  async recoverLocalData(): Promise<{ recoveredProjectsCount: number; recoveredCompaniesCount: number }> {
+  async recoverLocalData(): Promise<{ recoveredProjectsCount: number; recoveredCompaniesCount: number; recoveredStudioName?: string }> {
     return this.fallbackRepo.recoverLocalData();
   }
 }

@@ -83,7 +83,11 @@ export default function DashboardPage() {
 
       const repo = getProjectRepository();
       // Auto recover local data if needed
-      await repo.recoverLocalData();
+      const rec = await repo.recoverLocalData();
+      const activeUser = authService.getCurrentUser();
+      if (activeUser) {
+        setCurrentUser(activeUser);
+      }
       const [projList, compList, profile] = await Promise.all([
         repo.getProjects(),
         repo.getCompanies(),
@@ -93,13 +97,13 @@ export default function DashboardPage() {
       setCompanies(compList);
       setStudioProfile(profile);
       if (profile) {
-        setStudioName(profile.studioName || (user?.studioName || ''));
+        setStudioName(profile.studioName || (activeUser?.studioName || ''));
         setStudioLogoUrl(profile.logoUrl || '');
         setStudioLogoHeight(profile.logoHeight || 36);
-        setStudioRepresentative(profile.representative || (user?.name || ''));
+        setStudioRepresentative(profile.representative || (activeUser?.name || ''));
         setStudioRegistrationNumber(profile.registrationNumber || '');
         setStudioContact(profile.contact || '');
-        setStudioEmail(profile.email || (user?.email || ''));
+        setStudioEmail(profile.email || (activeUser?.email || ''));
         setStudioAddress(profile.address || '');
         setStudioBankAccount(profile.bankAccount || '');
       }
@@ -116,8 +120,10 @@ export default function DashboardPage() {
       const repo = getProjectRepository();
       const res = await repo.recoverLocalData();
       await loadData();
-      if (res.recoveredProjectsCount > 0 || res.recoveredCompaniesCount > 0) {
-        toast.success(`로컬에 보관된 프로젝트 ${res.recoveredProjectsCount}개, 업체 ${res.recoveredCompaniesCount}개를 서버에 성공적으로 복구했습니다.`);
+      if (res.recoveredStudioName || res.recoveredProjectsCount > 0 || res.recoveredCompaniesCount > 0) {
+        toast.success(
+          `${res.recoveredStudioName ? `[${res.recoveredStudioName}] ` : ''}데이터 복구 완료 (프로젝트 ${res.recoveredProjectsCount}건, 업체 ${res.recoveredCompaniesCount}건 동기화)`
+        );
       } else {
         toast.success('모든 데이터가 서버와 최신 상태로 동기화되었습니다.');
       }

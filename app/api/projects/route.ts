@@ -38,13 +38,18 @@ export async function POST(req: NextRequest) {
         if (!currentMap.has(lp.id)) {
           await saveServerProject(lp);
         } else {
-          // If local project was modified more recently or has more concepts, update it
           const existing = currentMap.get(lp.id)!;
-          const localConceptsCount = lp.concepts?.length || 0;
-          const serverConceptsCount = existing.concepts?.length || 0;
-          const localTime = new Date(lp.updatedAt || lp.createdAt).getTime();
-          const serverTime = new Date(existing.updatedAt || existing.createdAt).getTime();
-          if (localConceptsCount > serverConceptsCount || localTime > serverTime) {
+          // If local project is customized, always save
+          const isCustomized =
+            lp.title !== existing.title ||
+            lp.companyName !== existing.companyName ||
+            (lp.concepts?.length || 0) !== (existing.concepts?.length || 0) ||
+            JSON.stringify(lp.concepts) !== JSON.stringify(existing.concepts);
+
+          const localTime = new Date(lp.updatedAt || lp.createdAt || 0).getTime();
+          const serverTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+
+          if (isCustomized || localTime >= serverTime) {
             await saveServerProject(lp);
           }
         }

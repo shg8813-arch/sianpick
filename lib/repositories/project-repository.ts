@@ -161,5 +161,5 @@ export interface IProjectRepository {
   resetDemoData(): Promise<void>;
 
   // Local recovery & sync
-  recoverLocalData(): Promise<{ recoveredProjectsCount: number; recoveredCompaniesCount: number }>;
+  recoverLocalData(): Promise<{ recoveredProjectsCount: number; recoveredCompaniesCount: number; recoveredStudioName?: string }>;
 }
