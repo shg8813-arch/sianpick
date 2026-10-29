@@ -10,12 +10,12 @@ export interface StoredUserAccount extends UserProfile {
 }
 
 export const DEMO_USER: UserProfile = {
-  id: 'demo-designer',
-  email: 'designer@sianpick.com',
-  name: '데모 디자이너',
-  studioName: '스튜디오 아틀리에',
+  id: 'knitfilm-designer',
+  email: 'knitfilm@studio.com',
+  name: 'knitfilm 대표',
+  studioName: 'knitfilm 스튜디오',
   role: 'designer',
-  createdAt: '2026-01-01T00:00:00.000Z',
+  createdAt: '2026-10-25T00:00:00.000Z',
 };
 
 export class AuthService {
@@ -186,10 +186,16 @@ export class AuthService {
     const email = params.email.trim().toLowerCase();
     if (!email) throw new Error('이메일을 입력해주세요.');
 
-    // If demo email
-    if (email === DEMO_USER.email.toLowerCase()) {
-      this.setSession(DEMO_USER);
-      return DEMO_USER;
+    // If demo or knitfilm studio email
+    if (email === DEMO_USER.email.toLowerCase() || email === 'knitfilm@studio.com' || email === 'designer@sianpick.com') {
+      const userProfile: UserProfile = {
+        ...DEMO_USER,
+        email,
+        name: email.includes('knit') ? 'knitfilm 대표' : '대표 디자이너',
+        studioName: 'knitfilm 스튜디오',
+      };
+      this.setSession(userProfile);
+      return userProfile;
     }
 
     // 1. Try server login first

@@ -29,18 +29,57 @@ function LoginForm() {
   const [name, setName] = useState('');
   const [studioName, setStudioName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [registeredAccounts, setRegisteredAccounts] = useState<Array<{ email: string; name?: string; studioName?: string }>>([
+    { email: 'knitfilm@studio.com', name: 'knitfilm 대표', studioName: 'knitfilm 스튜디오' },
+    { email: 'designer@sianpick.com', name: '대표 디자이너', studioName: 'knitfilm 스튜디오' },
+  ]);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam === 'register') {
       setActiveTab('register');
     }
+
+    const fetchAccounts = async () => {
+      try {
+        const res = await fetch('/api/auth');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.users)) {
+            const list: Array<{ email: string; name?: string; studioName?: string }> = [...data.users];
+            try {
+              const localStr = localStorage.getItem('sianpick_registered_users_v1');
+              if (localStr) {
+                const local = JSON.parse(localStr);
+                if (Array.isArray(local)) {
+                  for (const lu of local) {
+                    if (lu && lu.email && !list.some((u) => u.email.toLowerCase() === lu.email.toLowerCase())) {
+                      list.push(lu);
+                    }
+                  }
+                }
+              }
+            } catch {}
+            if (list.length > 0) {
+              setRegisteredAccounts(list);
+            }
+          }
+        }
+      } catch {}
+    };
+    fetchAccounts();
   }, [searchParams]);
+
+  const handleSelectAccount = (accEmail: string) => {
+    setEmail(accEmail);
+    setPassword('1234');
+    toast.info(`${accEmail} 계정이 선택되었습니다.`);
+  };
 
   // Demo Login
   const handleDemoLogin = () => {
     authService.loginAsDemo();
-    toast.success('데모 스튜디오 아틀리에 계정으로 로그인되었습니다.');
+    toast.success('knitfilm 스튜디오 계정으로 로그인되었습니다.');
     const redirectUrl = searchParams.get('redirect') || '/dashboard';
     router.push(redirectUrl);
   };
@@ -187,28 +226,68 @@ function LoginForm() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-800">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>체험용 샘플 계정으로 즉시 둘러보기</span>
+                    <span>knitfilm 스튜디오 계정으로 즉시 시작</span>
                   </div>
                   <span className="text-[10px] px-1.5 py-0.5 bg-zinc-200 text-zinc-700 font-mono font-medium">
-                    DEMO
+                    KNITFILM
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 leading-relaxed">
-                  가입 없이 준비된 샘플 시안 프로젝트와 관리자 대시보드를 바로 확인하실 수 있습니다.
+                  별도 입력 없이 knitfilm 스튜디오의 런오브더밀 프로젝트 및 관리자 대시보드로 즉시 접속합니다.
                 </p>
                 <button
                   type="button"
                   onClick={handleDemoLogin}
                   className="w-full py-2 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs tracking-wide shadow-sm transition-all flex items-center justify-center gap-1.5"
                 >
-                  <span>체험용 대시보드로 즉시 시작</span>
+                  <span>knitfilm 스튜디오로 즉시 로그인</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
+              {/* Registered Accounts Quick Select */}
+              {registeredAccounts.length > 0 && (
+                <div className="p-3 bg-zinc-50 border border-zinc-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-zinc-800">
+                      등록된 로그인 계정 목록
+                    </span>
+                    <span className="text-[10px] text-zinc-500">
+                      클릭시 자동 입력
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {registeredAccounts.map((acc) => (
+                      <button
+                        key={acc.email}
+                        type="button"
+                        onClick={() => handleSelectAccount(acc.email)}
+                        className={`w-full text-left p-2 border transition-all flex items-center justify-between ${
+                          email === acc.email
+                            ? 'bg-white border-zinc-900 shadow-xs'
+                            : 'bg-white hover:bg-zinc-100/70 border-zinc-200'
+                        }`}
+                      >
+                        <div className="truncate pr-2">
+                          <p className="text-xs font-bold text-zinc-900 font-mono truncate">
+                            {acc.email}
+                          </p>
+                          <p className="text-[10px] text-zinc-500 truncate">
+                            {acc.studioName || acc.name || '디자이너'} · 비밀번호: 1234
+                          </p>
+                        </div>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-zinc-100 text-zinc-700 font-medium whitespace-nowrap">
+                          선택
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="relative flex py-1 items-center">
                 <div className="flex-grow border-t border-zinc-100" />
-                <span className="flex-shrink mx-3 text-[11px] text-zinc-400 font-mono">또는 이메일 로그인</span>
+                <span className="flex-shrink mx-3 text-[11px] text-zinc-400 font-mono">또는 직접 입력하여 로그인</span>
                 <div className="flex-grow border-t border-zinc-100" />
               </div>
 
@@ -225,7 +304,7 @@ function LoginForm() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="designer@studio.kr"
+                      placeholder="knitfilm@studio.com 또는 designer@sianpick.com"
                       className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900 transition-colors"
                     />
                   </div>
@@ -242,10 +321,13 @@ function LoginForm() {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="비밀번호를 입력하세요"
+                      placeholder="비밀번호 (초기: 1234)"
                       className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-zinc-50 border border-zinc-200 focus:bg-white focus:outline-none focus:border-zinc-900 transition-colors"
                     />
                   </div>
+                  <p className="text-[10px] text-zinc-400 mt-1">
+                    등록된 계정의 기본 비밀번호는 1234 입니다.
+                  </p>
                 </div>
 
                 <button
