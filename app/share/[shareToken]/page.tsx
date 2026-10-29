@@ -102,12 +102,15 @@ export default function ClientSharePage() {
           </div>
           <h2 className="text-xl font-bold text-zinc-900">접근할 수 없는 링크입니다</h2>
           <p className="text-xs text-zinc-500">{error || '프로젝트를 찾을 수 없습니다.'}</p>
-          <Link
-            href="/"
-            className="inline-block px-5 py-2.5 bg-zinc-900 text-white text-xs font-medium shadow-sm hover:bg-zinc-800 transition-colors"
-          >
-            홈으로 돌아가기
-          </Link>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-block px-5 py-2.5 bg-zinc-900 text-white text-xs font-medium shadow-sm hover:bg-zinc-800 transition-colors"
+            >
+              다시 시도하기
+            </button>
+          </div>
         </div>
       </div>
     );

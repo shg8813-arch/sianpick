@@ -41,7 +41,8 @@ function LoginForm() {
   const handleDemoLogin = () => {
     authService.loginAsDemo();
     toast.success('데모 스튜디오 아틀리에 계정으로 로그인되었습니다.');
-    router.push('/dashboard');
+    const redirectUrl = searchParams.get('redirect') || '/dashboard';
+    router.push(redirectUrl);
   };
 
   // Sign In
@@ -65,7 +66,8 @@ function LoginForm() {
 
       const user = await authService.login({ email, password });
       toast.success(`${user.name || user.email} 디자이너님, 환영합니다.`);
-      router.push('/dashboard');
+      const redirectUrl = searchParams.get('redirect') || '/dashboard';
+      router.push(redirectUrl);
     } catch (err: any) {
       toast.error(err.message || '로그인에 실패했습니다. 다시 시도해주세요.');
     } finally {
@@ -114,7 +116,8 @@ function LoginForm() {
       });
 
       toast.success(`${newUser.studioName || newUser.name} 스튜디오 계정이 생성되었습니다.`);
-      router.push('/dashboard');
+      const redirectUrl = searchParams.get('redirect') || '/dashboard';
+      router.push(redirectUrl);
     } catch (err: any) {
       toast.error(err.message || '회원가입 중 오류가 발생했습니다.');
     } finally {

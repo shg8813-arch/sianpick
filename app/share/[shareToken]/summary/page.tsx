@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Navbar } from '@/components/shared/navbar';
 import { FinalApprovalModal } from '@/components/revisions/final-approval-modal';
 import { ImageViewerModal } from '@/components/shared/image-viewer-modal';
 import { Project, Concept, DesignItem, Selection } from '@/types';
 import { getProjectRepository } from '@/lib/repositories';
 import { formatDateKR, getProjectStatusLabel } from '@/lib/utils/format';
+import { STUDIO_ATELIER_LOGO_SVG } from '@/lib/demo/sample-data';
 import {
   Trophy,
   ArrowLeft,
@@ -19,6 +19,7 @@ import {
   Check,
   Eye,
   ExternalLink,
+  Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,6 +29,9 @@ export default function ClientSummaryPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [studioLogo, setStudioLogo] = useState<string | null>(null);
+  const [studioLogoHeight, setStudioLogoHeight] = useState<number>(36);
 
   // Modals state
   const [isFinalApprovalModalOpen, setIsFinalApprovalModalOpen] = useState(false);
@@ -38,14 +42,19 @@ export default function ClientSummaryPage() {
     try {
       setIsLoading(true);
       const repo = getProjectRepository();
-      const data = await repo.getProjectByShareToken(shareToken);
-      if (!data) {
-        toast.error('프로젝트 정보를 찾을 수 없습니다.');
+      const [proj, profile] = await Promise.all([
+        repo.getProjectByShareToken(shareToken),
+        repo.getStudioProfile(),
+      ]);
+      if (!proj) {
+        setError('유효하지 않거나 만료된 공유 링크입니다.');
         return;
       }
-      setProject(data);
+      setProject(proj);
+      setStudioLogo(profile?.logoUrl || proj.companyLogoUrl || STUDIO_ATELIER_LOGO_SVG);
+      setStudioLogoHeight(profile?.logoHeight || proj.companyLogoHeight || 36);
     } catch {
-      toast.error('데이터 로딩 중 오류가 발생했습니다.');
+      setError('데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -55,11 +64,37 @@ export default function ClientSummaryPage() {
     loadProject();
   }, [shareToken]);
 
-  if (isLoading || !project) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FBFBFA] text-zinc-500 text-xs">
-        <div className="p-8 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
-          요약 데이터를 불러오는 중...
+      <div className="min-h-screen flex items-center justify-center bg-[#FBFBFA]">
+        <div className="text-center space-y-3 p-8 bg-white shadow-[0_12px_45px_rgba(0,0,0,0.035)]">
+          <div className="w-8 h-8 border-2 border-zinc-900 border-t-transparent animate-spin mx-auto" />
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">
+            선택시안 데이터를 불러오는 중...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !project) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FBFBFA] px-4">
+        <div className="max-w-md w-full bg-white p-8 shadow-[0_12px_45px_rgba(0,0,0,0.04)] text-center space-y-4">
+          <div className="w-12 h-12 bg-zinc-100 text-zinc-800 flex items-center justify-center mx-auto">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-bold text-zinc-900">접근할 수 없는 링크입니다</h2>
+          <p className="text-xs text-zinc-500">{error || '프로젝트를 찾을 수 없습니다.'}</p>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-block px-5 py-2.5 bg-zinc-900 text-white text-xs font-medium shadow-sm hover:bg-zinc-800 transition-colors"
+            >
+              다시 시도하기
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -71,6 +106,7 @@ export default function ClientSummaryPage() {
   const comments = project.comments || [];
   const remainingRevisions = Math.max(0, project.maxRevisionCount - project.usedRevisionCount);
   const isApproved = project.status === 'approved';
+  const statusInfo = getProjectStatusLabel(project.status);
 
   // Group candidate concept per design item
   const itemCandidatePairs = designItems.map((item) => {
@@ -95,7 +131,41 @@ export default function ClientSummaryPage() {
 
   return (
     <div onContextMenu={(e) => e.preventDefault()} className="min-h-screen flex flex-col bg-[#FBFBFA] pb-24 select-none">
-      <Navbar />
+      {/* Client Header */}
+      <header
+        className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md shadow-[0_2px_16px_rgba(0,0,0,0.03)] border-b border-zinc-100 transition-all"
+        style={{ minHeight: `${Math.max(64, studioLogoHeight + 20)}px` }}
+      >
+        <div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-2 sm:py-2.5 transition-all"
+          style={{ minHeight: `${Math.max(64, studioLogoHeight + 20)}px` }}
+        >
+          {/* Design Studio Company Logo Slot */}
+          <div className="flex items-center transition-all" style={{ height: `${studioLogoHeight}px` }}>
+            {(studioLogo || project.companyLogoUrl) ? (
+              <div className="max-w-[280px] flex items-center transition-all" style={{ height: `${studioLogoHeight}px` }}>
+                <img
+                  src={studioLogo || project.companyLogoUrl}
+                  alt="디자인 업체 로고"
+                  className="w-auto object-contain transition-all"
+                  style={{ height: `${studioLogoHeight}px`, maxHeight: `${studioLogoHeight}px` }}
+                />
+              </div>
+            ) : (
+              <div className="h-8 px-3.5 bg-zinc-50 border border-dashed border-zinc-200 text-xs font-semibold text-zinc-400 flex items-center justify-center tracking-wider">
+                디자인 업체 로고 미등록
+              </div>
+            )}
+          </div>
+
+          {/* Right Status Badge */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-2.5 py-1 bg-zinc-100 text-zinc-800 shadow-sm">
+              {statusInfo.label}
+            </span>
+          </div>
+        </div>
+      </header>
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
         {/* Navigation back */}
